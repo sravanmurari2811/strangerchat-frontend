@@ -4,7 +4,7 @@ const useChatStore = create((set) => ({
     user: null,
     peer: null,
     messages: [],
-    status: 'idle',
+    status: 'idle', // idle, searching, connected, disconnected
     chatMode: 'video',
     localStream: null,
     remoteStream: null,

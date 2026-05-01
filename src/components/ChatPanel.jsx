@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, Shield, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { Send, SkipForward, MessageCircle } from 'lucide-react';
 
 const ChatPanel = ({ onSendMessage, onNextUser }) => {
     const [message, setMessage] = useState('');
@@ -8,9 +8,7 @@ const ChatPanel = ({ onSendMessage, onNextUser }) => {
     const scrollRef = useRef(null);
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages]);
 
     const handleSend = (e) => {
@@ -22,103 +20,68 @@ const ChatPanel = ({ onSendMessage, onNextUser }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#020617]/80 backdrop-blur-3xl border-l border-white/5 w-full relative">
+        <div className="flex flex-col h-full bg-[#020617] border-l border-white/5 w-full relative">
             {/* Header */}
-            <div className="px-8 py-7 border-b border-white/5 flex justify-between items-center bg-black/20">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <MessageCircle size={22} className="text-white fill-white/10" />
-                        </div>
-                        {status === 'connected' && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-4 border-[#020617] animate-pulse" />
-                        )}
+            <div className="px-5 py-4 md:px-8 md:py-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-500">
+                        <MessageCircle size={22} />
                     </div>
                     <div>
-                        <h2 className="font-black text-sm text-white tracking-tight uppercase">
-                            {status === 'connected' ? peer?.nickname : 'Conversation'}
+                        <h2 className="font-black text-xs md:text-sm text-white uppercase tracking-tight">
+                            {status === 'connected' ? peer?.nickname : 'Chat'}
                         </h2>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
-                                {status === 'connected' ? 'Secure Channel' : 'Establishing...'}
-                            </span>
-                        </div>
+                        <span className="text-[8px] md:text-[10px] font-black uppercase text-blue-400 opacity-60">
+                            {status === 'connected' ? 'Secure Channel' : 'Offline'}
+                        </span>
                     </div>
                 </div>
-                <button className="text-slate-600 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-xl">
-                    <MoreHorizontal size={20} />
-                </button>
             </div>
 
             {/* Messages Area */}
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar"
-            >
-                {status !== 'connected' && (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-30 animate-reveal">
-                        <div className="w-20 h-20 border-2 border-dashed border-slate-700 rounded-full flex items-center justify-center">
-                            <Shield size={32} className="text-slate-600" />
-                        </div>
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 max-w-[200px] leading-relaxed">
-                            Waiting for a secure peer connection...
-                        </p>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar">
+                {status === 'searching' && (
+                    <div className="flex flex-col items-center justify-center h-full opacity-20">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Matchmaking...</p>
                     </div>
                 )}
 
-                {messages.length === 0 && status === 'connected' && (
-                    <div className="py-12 text-center animate-reveal">
-                        <span className="glass text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] px-6 py-2.5 rounded-full border border-white/5 shadow-xl">
-                            Session Started
-                        </span>
+                {status === 'disconnected' && (
+                    <div className="flex flex-col items-center justify-center h-full space-y-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Stranger Left</p>
+                        <button onClick={onNextUser} className="px-6 py-2 bg-blue-600 rounded-full font-black text-[10px] uppercase">Find New Stranger</button>
                     </div>
                 )}
 
                 {messages.map((msg, idx) => (
-                    <div
-                        key={idx}
-                        className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'} animate-reveal`}
-                    >
-                        <div className={`max-w-[85%] rounded-[1.5rem] px-6 py-4 text-sm font-medium leading-relaxed shadow-2xl ${
-                            msg.sender === 'me'
-                            ? 'bg-blue-600 text-white rounded-tr-none glow-blue'
-                            : 'bg-slate-800/50 text-slate-200 rounded-tl-none border border-white/5 backdrop-blur-md'
-                        }`}>
+                    <div key={idx} className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'} animate-reveal`}>
+                        <div className={`max-w-[85%] rounded-2xl px-5 py-3 text-sm font-medium ${msg.sender === 'me' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-100 rounded-tl-none border border-white/5'}`}>
                             {msg.text}
                         </div>
-                        <span className="text-[9px] font-black text-slate-600 mt-3 uppercase tracking-widest">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <span className="text-[8px] text-slate-600 mt-2 font-bold uppercase">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 ))}
             </div>
 
-            {/* Controls */}
-            <div className="p-8 bg-black/40 border-t border-white/5 space-y-6">
+            {/* Input Controls */}
+            <div className="p-4 md:p-8 bg-black/40 border-t border-white/5 space-y-4">
                 <form onSubmit={handleSend} className="relative group">
                     <input
                         type="text"
-                        placeholder={status === 'connected' ? "Type a message..." : "Waiting for match..."}
-                        className="w-full bg-[#0a0a0a]/80 border border-white/5 rounded-[1.8rem] pl-7 pr-16 py-5 text-sm text-white placeholder:text-slate-700 focus:outline-none focus:border-blue-500/40 focus:ring-4 focus:ring-blue-500/5 transition-all disabled:opacity-30 font-medium"
+                        placeholder={status === 'connected' ? "Type a message..." : "Waiting..."}
+                        className="input-field pr-16"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         disabled={status !== 'connected'}
                     />
-                    <button
-                        type="submit"
-                        disabled={status !== 'connected' || !message.trim()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white p-3 rounded-2xl transition-all active:scale-90 shadow-lg shadow-blue-600/20"
-                    >
-                        <Send size={20} />
+                    <button type="submit" disabled={status !== 'connected' || !message.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 p-3 rounded-xl">
+                        <Send size={18} />
                     </button>
                 </form>
 
-                <button
-                    onClick={onNextUser}
-                    className="w-full bg-slate-800/40 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-[0.2em] py-5 rounded-[1.8rem] flex items-center justify-center gap-3 border border-white/5 transition-all active:scale-[0.98] group"
-                >
-                    <SkipForward size={18} className="group-hover:translate-x-1 transition-transform" />
-                    <span>{status === 'connected' ? 'Next Stranger' : 'Skip Queue'}</span>
+                <button onClick={onNextUser} className="btn-primary flex items-center justify-center gap-2">
+                    <SkipForward size={18} />
+                    <span>NEXT STRANGER</span>
                 </button>
             </div>
         </div>

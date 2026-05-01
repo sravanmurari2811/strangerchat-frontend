@@ -3,40 +3,15 @@ import io from 'socket.io-client';
 import useChatStore from '../store/useChatStore';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
-// Initialize socket once outside the hook to prevent multiple connections
-const socket = io(BACKEND_URL, {
-    transports: ['websocket'],
-    autoConnect: true,
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000
-});
+const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true });
 
 export const useWebRTC = () => {
-    const {
-        peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat
-    } = useChatStore();
-
+    const { peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat } = useChatStore();
     const pc = useRef(null);
     const iceQueue = useRef([]);
 
-    const configuration = {
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-        ]
-    };
-
     const cleanup = useCallback(() => {
-        if (pc.current) {
-            pc.current.onicecandidate = null;
-            pc.current.ontrack = null;
-            pc.current.onconnectionstatechange = null;
-            pc.current.close();
-            pc.current = null;
-        }
+        if (pc.current) { pc.current.close(); pc.current = null; }
         iceQueue.current = [];
     }, []);
 
@@ -44,54 +19,37 @@ export const useWebRTC = () => {
         if (!pc.current || !pc.current.remoteDescription) return;
         while (iceQueue.current.length > 0) {
             const candidate = iceQueue.current.shift();
-            pc.current.addIceCandidate(new RTCIceCandidate(candidate))
-                .catch(e => console.error('[WebRTC] Error adding queued ICE candidate', e));
+            pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
         }
     }, []);
 
     const setupPeerConnection = useCallback((remoteSocketId) => {
         cleanup();
-        pc.current = new RTCPeerConnection(configuration);
+        pc.current = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
+        });
 
-        pc.current.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.emit('ice-candidate', { to: remoteSocketId, candidate: event.candidate });
-            }
+        pc.current.onicecandidate = (e) => {
+            if (e.candidate) socket.emit('ice-candidate', { to: remoteSocketId, candidate: e.candidate });
         };
 
-        pc.current.ontrack = (event) => {
-            if (event.streams && event.streams[0]) {
-                setRemoteStream(event.streams[0]);
-            }
+        pc.current.ontrack = (e) => {
+            if (e.streams && e.streams[0]) setRemoteStream(e.streams[0]);
         };
 
-        pc.current.onconnectionstatechange = () => {
-            console.log('[WebRTC] Connection State:', pc.current?.connectionState);
-            if (pc.current?.connectionState === 'failed' || pc.current?.connectionState === 'disconnected') {
-                // Handle failure
-            }
-        };
-
-        const { localStream } = useChatStore.getState();
+        const localStream = useChatStore.getState().localStream;
         if (localStream) {
-            localStream.getTracks().forEach(track => {
-                pc.current.addTrack(track, localStream);
-            });
+            localStream.getTracks().forEach(track => pc.current.addTrack(track, localStream));
         }
     }, [cleanup, setRemoteStream]);
 
     const initiateCall = useCallback(async (remoteSocketId) => {
         setupPeerConnection(remoteSocketId);
         try {
-            const offer = await pc.current.createOffer({
-                offerToReceiveAudio: true,
-                offerToReceiveVideo: true
-            });
+            const offer = await pc.current.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
             await pc.current.setLocalDescription(offer);
             socket.emit('offer', { to: remoteSocketId, offer });
-        } catch (e) {
-            console.error('[WebRTC] Offer generation failed:', e);
-        }
+        } catch (e) { console.error('Signaling Error:', e); }
     }, [setupPeerConnection]);
 
     const handleOffer = useCallback(async (from, offer) => {
@@ -102,9 +60,7 @@ export const useWebRTC = () => {
             await pc.current.setLocalDescription(answer);
             socket.emit('answer', { to: from, answer });
             processIceQueue();
-        } catch (e) {
-            console.error('[WebRTC] Failed to handle offer:', e);
-        }
+        } catch (e) { console.error('Signaling Error:', e); }
     }, [setupPeerConnection, processIceQueue]);
 
     useEffect(() => {
@@ -114,24 +70,22 @@ export const useWebRTC = () => {
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
             if (mode === 'video' && initiator) {
-                setTimeout(() => initiateCall(peerId), 1000);
+                setTimeout(() => initiateCall(peerId), 1500);
             }
         });
 
         socket.on('offer', ({ from, offer }) => handleOffer(from, offer));
 
-        socket.on('answer', async ({ from, answer }) => {
+        socket.on('answer', async ({ answer }) => {
             if (pc.current) {
                 try {
                     await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
                     processIceQueue();
-                } catch (e) {
-                    console.error('[WebRTC] Failed to set remote answer:', e);
-                }
+                } catch (e) {}
             }
         });
 
-        socket.on('ice-candidate', ({ from, candidate }) => {
+        socket.on('ice-candidate', ({ candidate }) => {
             if (!candidate) return;
             if (!pc.current || !pc.current.remoteDescription) {
                 iceQueue.current.push(candidate);
@@ -146,7 +100,7 @@ export const useWebRTC = () => {
 
         socket.on('peer-disconnected', () => {
             cleanup();
-            resetChat();
+            resetChat(); // Correctly sets status to 'disconnected' for manual rematch
         });
 
         return () => {
@@ -160,25 +114,25 @@ export const useWebRTC = () => {
         };
     }, [initiateCall, handleOffer, setPeer, setStatus, addMessage, cleanup, resetChat, processIceQueue]);
 
-    const sendMessage = useCallback((text) => {
-        const { peer: currentPeer } = useChatStore.getState();
-        if (currentPeer) {
-            socket.emit('send-message', { to: currentPeer.id, message: text });
+    const sendMessage = (text) => {
+        const p = useChatStore.getState().peer;
+        if (p) {
+            socket.emit('send-message', { to: p.id, message: text });
             addMessage({ text, sender: 'me', timestamp: new Date() });
         }
-    }, [addMessage]);
+    };
 
-    const nextUser = useCallback(() => {
+    const nextUser = () => {
         cleanup();
         resetChat();
         setStatus('searching');
         socket.emit('next-user');
-    }, [cleanup, resetChat, setStatus]);
+    };
 
-    const join = useCallback((userData) => {
+    const join = (userData) => {
         setStatus('searching');
         socket.emit('join-matchmaking', userData);
-    }, [setStatus]);
+    };
 
     return { join, sendMessage, nextUser };
 };
