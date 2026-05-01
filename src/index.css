@@ -8,7 +8,7 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* --- Ultimate Screen Fit Reset --- */
+/* --- Absolute Screen Fit --- */
 html, body {
   margin: 0;
   padding: 0;
@@ -19,7 +19,6 @@ html, body {
   height: 100dvh;
   width: 100vw;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -29,12 +28,11 @@ html, body {
   flex-direction: column;
 }
 
-/* --- Design System Utilities --- */
+/* --- Maskmeet Design System --- */
 .glass-panel {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
   backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .luxury-glass {
@@ -54,8 +52,15 @@ html, body {
   filter: blur(80px);
 }
 
+.brand-glow {
+  text-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-black;
+}
+
 .mirror { transform: scaleX(-1); }
-.text-gradient { @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-black; }
 
 .input-field {
   @apply w-full bg-black/40 border border-white/5 rounded-2xl py-4 md:py-5 px-6 md:px-8 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-medium;
@@ -65,14 +70,13 @@ html, body {
   @apply bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] py-5 md:py-6 rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98] flex items-center justify-center gap-4;
 }
 
-/* Custom Scrollbar */
+/* Scrollbar */
 .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-blue-500/20 rounded-full hover:bg-blue-500/40 transition-colors; }
 
-/* Animations */
+/* Cinematic Entrance */
 @keyframes reveal {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(10px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 .animate-reveal { animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
