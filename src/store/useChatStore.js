@@ -26,6 +26,21 @@ const useChatStore = create((set) => ({
         status: 'disconnected',
         remoteStream: null
     }),
+
+    goHome: () => {
+        const { localStream } = useChatStore.getState();
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        set({
+            user: null,
+            peer: null,
+            messages: [],
+            status: 'idle',
+            localStream: null,
+            remoteStream: null
+        });
+    }
 }));
 
 export default useChatStore;
