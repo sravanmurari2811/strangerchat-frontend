@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageSquare, Home, Shield, UserX, Video, Mic, X, CircleAlert } from 'lucide-react';
+import { Send, SkipForward, MessageSquare, Home, Shield, UserX, Video, Mic, X } from 'lucide-react';
 
 const ChatPanel = ({ onSendMessage, onNextUser, requestCall, handleAcceptCall, declineCall }) => {
     const [message, setMessage] = useState('');
@@ -59,14 +59,14 @@ const ChatPanel = ({ onSendMessage, onNextUser, requestCall, handleAcceptCall, d
                         <button
                             onClick={() => requestCall('audio')}
                             disabled={callRequest !== null}
-                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'audio' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
+                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'audio' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
                         >
                             <Mic size={18} />
                         </button>
                         <button
                             onClick={() => requestCall('video')}
                             disabled={callRequest !== null}
-                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'video' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
+                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'video' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
                         >
                             <Video size={18} />
                         </button>
@@ -82,7 +82,7 @@ const ChatPanel = ({ onSendMessage, onNextUser, requestCall, handleAcceptCall, d
                             {incomingCall === 'video' ? <Video size={40} className="text-white" /> : <Mic size={40} className="text-white" />}
                         </div>
                         <div className="text-center">
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70 mb-1">Incoming Request</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1 text-white/70">Incoming Request</p>
                             <h3 className="text-xl font-black text-white">{peer?.nickname} wants a {incomingCall} call</h3>
                         </div>
                         <div className="flex gap-4 w-full">
