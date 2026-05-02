@@ -8,7 +8,7 @@
 
 body {
   margin: 0;
-  background: #020617;
+  background: #0f172a;
   color: #f8fafc;
   overflow-x: hidden;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -18,11 +18,11 @@ body {
 .space-bg {
   position: fixed;
   inset: 0;
-  background-color: #020617;
+  background-color: #0f172a;
   background-image:
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(253,16%,15%,1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225,39%,25%,1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339,49%,25%,1) 0, transparent 50%);
   z-index: -1;
 }
 
@@ -61,14 +61,14 @@ body {
 }
 
 .glass-panel {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(30, 41, 59, 0.75);
   backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .brand-glow {
-  text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
 }
 
 .animate-reveal {
@@ -81,7 +81,7 @@ body {
 }
 
 .input-field {
-  @apply w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-200 placeholder:text-slate-600;
+  @apply w-full bg-black/40 border border-white/20 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-100 placeholder:text-slate-500;
 }
 
 .mirror {
@@ -92,7 +92,7 @@ body {
   width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 100px;
 }
 

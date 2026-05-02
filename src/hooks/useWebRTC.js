@@ -8,21 +8,25 @@ const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true })
 export const useWebRTC = () => {
     const {
         peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat,
-        setIncomingCall, setCallRequest, setChatMode, setLocalStream, clearChat
+        setIncomingCall, setCallRequest, setChatMode, setLocalStream, clearChat, goHome
     } = useChatStore();
 
     const pc = useRef(null);
     const iceQueue = useRef([]);
 
     const cleanup = useCallback(() => {
-        if (pc.current) { pc.current.close(); pc.current = null; }
+        if (pc.current) {
+            pc.current.close();
+            pc.current = null;
+        }
         iceQueue.current = [];
-        const localStream = useChatStore.getState().localStream;
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
+        const currentStream = useChatStore.getState().localStream;
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
             setLocalStream(null);
         }
-    }, [setLocalStream]);
+        setRemoteStream(null);
+    }, [setLocalStream, setRemoteStream]);
 
     const setupPeerConnection = useCallback((remoteSocketId, stream) => {
         if (pc.current) pc.current.close();
@@ -36,7 +40,9 @@ export const useWebRTC = () => {
         };
 
         pc.current.ontrack = (e) => {
-            if (e.streams && e.streams[0]) setRemoteStream(e.streams[0]);
+            if (e.streams && e.streams[0]) {
+                setRemoteStream(e.streams[0]);
+            }
         };
 
         if (stream) {
@@ -55,8 +61,8 @@ export const useWebRTC = () => {
 
     const handleAcceptCall = useCallback(async () => {
         const incoming = useChatStore.getState().incomingCall;
-        const peer = useChatStore.getState().peer;
-        if (!incoming || !peer) return;
+        const p = useChatStore.getState().peer;
+        if (!incoming || !p) return;
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -67,20 +73,29 @@ export const useWebRTC = () => {
             setChatMode(incoming);
             setIncomingCall(null);
 
-            setupPeerConnection(peer.id, stream);
-            socket.emit('accept-call', { to: peer.id, type: incoming });
+            setupPeerConnection(p.id, stream);
+            socket.emit('accept-call', { to: p.id, type: incoming });
         } catch (err) {
-            alert("Camera/Mic access denied");
-            socket.emit('decline-call', { to: peer.id });
+            addMessage({ text: "Camera/Mic access denied", sender: 'system', type: 'disconnected', timestamp: new Date() });
+            socket.emit('decline-call', { to: p.id });
             setIncomingCall(null);
         }
-    }, [setLocalStream, setChatMode, setIncomingCall, setupPeerConnection]);
+    }, [setLocalStream, setChatMode, setIncomingCall, setupPeerConnection, addMessage]);
 
     const declineCall = useCallback(() => {
-        const peer = useChatStore.getState().peer;
-        if (peer) socket.emit('decline-call', { to: peer.id });
+        const p = useChatStore.getState().peer;
+        if (p) socket.emit('decline-call', { to: p.id });
         setIncomingCall(null);
     }, [setIncomingCall]);
+
+    const endCall = useCallback(() => {
+        const p = useChatStore.getState().peer;
+        if (p) socket.emit('end-call', { to: p.id });
+
+        cleanup();
+        setChatMode('text');
+        addMessage({ text: "Call ended", sender: 'system', type: 'disconnected', timestamp: new Date() });
+    }, [cleanup, setChatMode, addMessage]);
 
     useEffect(() => {
         const onMatched = ({ peerId, peerNickname, mode, initiator }) => {
@@ -88,7 +103,6 @@ export const useWebRTC = () => {
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
 
-            // Add "Connected" message
             addMessage({ text: `${peerNickname} connected`, sender: 'system', type: 'connected', timestamp: new Date() });
 
             if (mode === 'video') {
@@ -101,23 +115,32 @@ export const useWebRTC = () => {
             }
         };
 
-        socket.on('waiting', () => {
-            setStatus('searching');
-        });
-
+        socket.on('waiting', () => setStatus('searching'));
         socket.on('matched', onMatched);
-
         socket.on('incoming-call', ({ type }) => setIncomingCall(type));
 
-        socket.on('call-accepted', ({ from }) => {
+        socket.on('call-accepted', ({ from, type }) => {
+            const currentRequest = useChatStore.getState().callRequest;
             setCallRequest(null);
+
+            // Critical: Force initiator to switch view
+            const finalMode = type || currentRequest || 'video';
+            setChatMode(finalMode);
+
             const stream = useChatStore.getState().localStream;
             if (stream) initiateWebRTC(from, stream);
         });
 
         socket.on('call-declined', () => {
             setCallRequest(null);
-            alert("Stranger declined call");
+            addMessage({ text: "Stranger declined the call", sender: 'system', type: 'disconnected', timestamp: new Date() });
+            cleanup();
+        });
+
+        socket.on('call-ended', () => {
+            cleanup();
+            setChatMode('text');
+            addMessage({ text: "Stranger ended the call", sender: 'system', type: 'disconnected', timestamp: new Date() });
         });
 
         socket.on('offer', async ({ from, offer }) => {
@@ -148,29 +171,24 @@ export const useWebRTC = () => {
         socket.on('peer-disconnected', () => {
             const currentPeer = useChatStore.getState().peer;
             if (currentPeer) {
-                addMessage({
-                    text: `${currentPeer.nickname} left`,
-                    sender: 'system',
-                    type: 'disconnected',
-                    timestamp: new Date()
-                });
+                addMessage({ text: `${currentPeer.nickname} left`, sender: 'system', type: 'disconnected', timestamp: new Date() });
             }
             cleanup();
-            resetChat(true); // Keep peer info so we know who left for the button/message
+            resetChat(true);
         });
 
         return () => {
             socket.off('waiting'); socket.off('matched'); socket.off('incoming-call');
-            socket.off('call-accepted'); socket.off('call-declined'); socket.off('offer');
-            socket.off('answer'); socket.off('ice-candidate'); socket.off('receive-message');
-            socket.off('peer-disconnected');
+            socket.off('call-accepted'); socket.off('call-declined'); socket.off('call-ended');
+            socket.off('offer'); socket.off('answer'); socket.off('ice-candidate');
+            socket.off('receive-message'); socket.off('peer-disconnected');
         };
     }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode, clearChat]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
-        const status = useChatStore.getState().status;
-        if (p && status === 'connected') {
+        const s = useChatStore.getState().status;
+        if (p && s === 'connected') {
             socket.emit('send-message', { to: p.id, message: text });
             addMessage({ text, sender: 'me', timestamp: new Date() });
         }
@@ -181,6 +199,12 @@ export const useWebRTC = () => {
         clearChat();
         setStatus('searching');
         socket.emit('next-user');
+    };
+
+    const leaveChat = () => {
+        cleanup();
+        socket.emit('leave-chat');
+        goHome();
     };
 
     const join = (userData) => {
@@ -196,8 +220,10 @@ export const useWebRTC = () => {
             setLocalStream(stream);
             setCallRequest(type);
             socket.emit('request-call', { to: p.id, type });
-        } catch (err) { alert("Camera/Mic access required"); }
+        } catch (err) {
+            addMessage({ text: "Camera/Mic access required for calls", sender: 'system', type: 'disconnected', timestamp: new Date() });
+        }
     };
 
-    return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall };
+    return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall, leaveChat, endCall };
 };
