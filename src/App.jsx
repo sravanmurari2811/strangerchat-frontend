@@ -9,7 +9,7 @@ import { MessageSquare, ShieldCheck, Zap } from 'lucide-react';
 function App() {
     const { status, setUser, chatMode } = useChatStore();
 
-    // IMPORTANT: useWebRTC is only called ONCE here at the root.
+    // Initialize WebRTC hook ONCE here
     const rtc = useWebRTC();
 
     useEffect(() => {

@@ -8,8 +8,7 @@ const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true })
 export const useWebRTC = () => {
     const {
         peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat,
-        setIncomingCall, setCallRequest, chatMode, setChatMode,
-        setLocalStream, initialMode
+        setIncomingCall, setCallRequest, setChatMode, setLocalStream
     } = useChatStore();
 
     const pc = useRef(null);
@@ -33,15 +32,11 @@ export const useWebRTC = () => {
         });
 
         pc.current.onicecandidate = (e) => {
-            if (e.candidate) {
-                socket.emit('ice-candidate', { to: remoteSocketId, candidate: e.candidate });
-            }
+            if (e.candidate) socket.emit('ice-candidate', { to: remoteSocketId, candidate: e.candidate });
         };
 
         pc.current.ontrack = (e) => {
-            if (e.streams && e.streams[0]) {
-                setRemoteStream(e.streams[0]);
-            }
+            if (e.streams && e.streams[0]) setRemoteStream(e.streams[0]);
         };
 
         if (stream) {
@@ -72,11 +67,10 @@ export const useWebRTC = () => {
             setChatMode(incoming);
             setIncomingCall(null);
 
-            // Prepare connection and notify the requester
             setupPeerConnection(peer.id, stream);
             socket.emit('accept-call', { to: peer.id, type: incoming });
         } catch (err) {
-            console.error("Media access error:", err);
+            alert("Camera/Mic access denied");
             socket.emit('decline-call', { to: peer.id });
             setIncomingCall(null);
         }
@@ -84,56 +78,36 @@ export const useWebRTC = () => {
 
     const declineCall = useCallback(() => {
         const peer = useChatStore.getState().peer;
-        if (peer) {
-            socket.emit('decline-call', { to: peer.id });
-        }
+        if (peer) socket.emit('decline-call', { to: peer.id });
         setIncomingCall(null);
     }, [setIncomingCall]);
 
     useEffect(() => {
-        socket.on('waiting', () => setStatus('searching'));
-
-        socket.on('matched', ({ peerId, peerNickname, mode, initiator }) => {
+        const onMatched = ({ peerId, peerNickname, mode, initiator }) => {
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
-
-            // Automatic video mode if chosen from home
             if (mode === 'video') {
                 setChatMode('video');
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                     setLocalStream(stream);
-                    if (initiator) {
-                        setTimeout(() => initiateWebRTC(peerId, stream), 1000);
-                    } else {
-                        setupPeerConnection(peerId, stream);
-                    }
-                }).catch(err => console.error("Auto-video failed:", err));
+                    if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
+                    else setupPeerConnection(peerId, stream);
+                }).catch(() => {});
             }
-        });
+        };
 
-        socket.on('incoming-call', ({ from, type }) => {
-            setIncomingCall(type);
-        });
-
-        socket.on('call-accepted', async ({ from, type }) => {
+        socket.on('waiting', () => setStatus('searching'));
+        socket.on('matched', onMatched);
+        socket.on('incoming-call', ({ type }) => setIncomingCall(type));
+        socket.on('call-accepted', ({ from }) => {
             setCallRequest(null);
             const stream = useChatStore.getState().localStream;
-            if (stream) {
-                // Requestor starts the WebRTC handshake after recipient accepts
-                initiateWebRTC(from, stream);
-            }
+            if (stream) initiateWebRTC(from, stream);
         });
-
         socket.on('call-declined', () => {
             setCallRequest(null);
-            const stream = useChatStore.getState().localStream;
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                setLocalStream(null);
-            }
-            alert("The stranger declined your call request.");
+            alert("Stranger declined call");
         });
-
         socket.on('offer', async ({ from, offer }) => {
             const stream = useChatStore.getState().localStream;
             setupPeerConnection(from, stream);
@@ -142,50 +116,25 @@ export const useWebRTC = () => {
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
                 socket.emit('answer', { to: from, answer });
-
-                // Process queued candidates
                 while (iceQueue.current.length > 0) {
-                    const candidate = iceQueue.current.shift();
-                    pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+                    pc.current.addIceCandidate(new RTCIceCandidate(iceQueue.current.shift())).catch(() => {});
                 }
-            } catch (e) { console.error('Signaling Error:', e); }
+            } catch (e) {}
         });
-
         socket.on('answer', async ({ answer }) => {
-            if (pc.current) {
-                try {
-                    await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
-                } catch (e) {}
-            }
+            if (pc.current) pc.current.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {});
         });
-
         socket.on('ice-candidate', ({ candidate }) => {
-            if (pc.current && pc.current.remoteDescription) {
-                pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-            } else {
-                iceQueue.current.push(candidate);
-            }
+            if (pc.current && pc.current.remoteDescription) pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+            else iceQueue.current.push(candidate);
         });
-
-        socket.on('receive-message', ({ message }) => {
-            addMessage({ text: message, sender: 'stranger', timestamp: new Date() });
-        });
-
-        socket.on('peer-disconnected', () => {
-            cleanup();
-            resetChat();
-        });
+        socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
+        socket.on('peer-disconnected', () => { cleanup(); resetChat(); });
 
         return () => {
-            socket.off('waiting');
-            socket.off('matched');
-            socket.off('incoming-call');
-            socket.off('call-accepted');
-            socket.off('call-declined');
-            socket.off('offer');
-            socket.off('answer');
-            socket.off('ice-candidate');
-            socket.off('receive-message');
+            socket.off('waiting'); socket.off('matched'); socket.off('incoming-call');
+            socket.off('call-accepted'); socket.off('call-declined'); socket.off('offer');
+            socket.off('answer'); socket.off('ice-candidate'); socket.off('receive-message');
             socket.off('peer-disconnected');
         };
     }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode]);
@@ -198,33 +147,17 @@ export const useWebRTC = () => {
         }
     };
 
-    const nextUser = () => {
-        cleanup();
-        resetChat();
-        setStatus('searching');
-        socket.emit('next-user');
-    };
-
-    const join = (userData) => {
-        setStatus('searching');
-        socket.emit('join-matchmaking', userData);
-    };
-
+    const nextUser = () => { cleanup(); resetChat(); setStatus('searching'); socket.emit('next-user'); };
+    const join = (userData) => { setStatus('searching'); socket.emit('join-matchmaking', userData); };
     const requestCall = async (type) => {
         const p = useChatStore.getState().peer;
         if (!p) return;
-
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: type === 'video',
-                audio: true
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
             setLocalStream(stream);
             setCallRequest(type);
             socket.emit('request-call', { to: p.id, type });
-        } catch (err) {
-            alert("Please allow camera/microphone access to make calls.");
-        }
+        } catch (err) { alert("Camera/Mic access required"); }
     };
 
     return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall };

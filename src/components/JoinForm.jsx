@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles, Globe2, Shield, AlertCircle, Mars, Venus, Users } from 'lucide-react';
+import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles, Globe, Shield, CircleAlert, Mars, Venus, Users } from 'lucide-react';
 
 const JoinForm = ({ onJoin }) => {
     const [nickname, setNickname] = useState('');
@@ -39,12 +39,12 @@ const JoinForm = ({ onJoin }) => {
         setError('');
 
         if (!age) {
-            setError("Age is required to ensure safety.");
+            setError("Age is required to ensure a safe community.");
             return;
         }
 
         if (age < 18) {
-            setError("Safety first: You must be 18+ to enter.");
+            setError("You must be at least 18 years old to enter.");
             return;
         }
 
@@ -53,17 +53,15 @@ const JoinForm = ({ onJoin }) => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-[#020617] text-slate-200 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden font-['Plus_Jakarta_Sans']">
-            {/* Background elements are handled by .space-bg in App.jsx */}
+        <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden font-['Plus_Jakarta_Sans']">
 
-            {/* Main Container */}
             <div className="max-w-6xl w-full flex flex-col items-center z-10">
 
                 {/* Header Branding */}
                 <div className="text-center mb-10 space-y-4 animate-reveal">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase">
                         <Sparkles size={12} />
-                        Identity Masked, Privacy Guaranteed
+                        Masked Identity • Total Privacy
                     </div>
                     <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white leading-none brand-glow">
                         Mask<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">meet.</span>
@@ -90,7 +88,7 @@ const JoinForm = ({ onJoin }) => {
                                             type="text"
                                             value={nickname}
                                             onChange={(e) => setNickname(e.target.value)}
-                                            placeholder="Pick a name..."
+                                            placeholder="Stranger"
                                             className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-200"
                                         />
                                     </div>
@@ -115,7 +113,7 @@ const JoinForm = ({ onJoin }) => {
                                             />
                                         </div>
 
-                                        {/* Latest Gender Card Selection */}
+                                        {/* Modern Gender Card Selection */}
                                         <div className="flex bg-black/40 border border-white/5 rounded-2xl p-1.5 gap-1.5">
                                             {[
                                                 { id: 'male', icon: <Mars size={16} /> },
@@ -139,10 +137,10 @@ const JoinForm = ({ onJoin }) => {
                                         </div>
                                     </div>
 
-                                    {/* Latest Error UI (No Alerts) */}
+                                    {/* Inline Error UI */}
                                     {error && (
                                         <div className="flex items-center gap-2 text-red-400 text-[10px] font-black uppercase tracking-widest animate-reveal mt-2 bg-red-400/10 py-2 px-4 rounded-lg border border-red-400/20">
-                                            <AlertCircle size={14} />
+                                            <CircleAlert size={14} />
                                             {error}
                                         </div>
                                     )}
@@ -192,13 +190,13 @@ const JoinForm = ({ onJoin }) => {
                                         <Ghost size={48} className="text-blue-400 opacity-40" />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-2xl font-black text-white">Identity Masked</h3>
+                                        <h3 className="text-2xl font-black text-white">Masked Access</h3>
                                         <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
                                             Start with a secure text link. You decide when to reveal your camera to a stranger.
                                         </p>
                                     </div>
                                     <div className="flex gap-4 opacity-30">
-                                        <div className="p-3 bg-white/5 rounded-xl"><Globe2 size={20} /></div>
+                                        <div className="p-3 bg-white/5 rounded-xl"><Globe size={20} /></div>
                                         <div className="p-3 bg-white/5 rounded-xl"><Shield size={20} /></div>
                                         <div className="p-3 bg-white/5 rounded-xl"><Zap size={20} /></div>
                                     </div>
@@ -220,12 +218,12 @@ const JoinForm = ({ onJoin }) => {
                         <span className="text-[10px] font-black uppercase tracking-widest">Global P2P Network</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 text-center">
-                        <Globe2 className="text-emerald-400" size={24} />
+                        <Globe className="text-emerald-400" size={24} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Worldwide Access</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 text-center">
                         <Shield className="text-purple-400" size={24} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">100% Privacy</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">100% Private</span>
                     </div>
                 </div>
             </div>
