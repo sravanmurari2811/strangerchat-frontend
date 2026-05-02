@@ -176,7 +176,7 @@ const JoinForm = ({ onJoin }) => {
                 </div>
             </div>
 
-            {/* SEO FOOTER SECTION */}
+            {/* SEO & TRUST FOOTER */}
             <div className="max-w-4xl w-full mt-20 pb-20 relative z-10 border-t border-white/5 pt-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 opacity-40 hover:opacity-100 transition-opacity duration-500">
                     <div className="space-y-4">
@@ -195,6 +195,10 @@ const JoinForm = ({ onJoin }) => {
                             Our "masked" philosophy means you decide how much you share. Talk to strangers, make new friends,
                             and enjoy the best <strong>stranger chat</strong> features available online today. 100% Free. 100% Real.
                         </p>
+                        <div className="flex gap-4 pt-2">
+                            <a href="/privacy.html" className="text-[10px] font-black tracking-widest uppercase hover:text-blue-400 transition-colors">Privacy Policy</a>
+                            <a href="/terms.html" className="text-[10px] font-black tracking-widest uppercase hover:text-blue-400 transition-colors">Terms of Service</a>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-12 text-center">
