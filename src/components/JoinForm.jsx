@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles, Globe, Shield, AlertCircle, Mars, Venus, Users } from 'lucide-react';
+import {
+    User,
+    Video,
+    MessageSquare,
+    Zap,
+    ShieldCheck,
+    ChevronRight,
+    Ghost,
+    Sparkles,
+    Globe,
+    Shield,
+    AlertCircle,
+    Mars,
+    Venus,
+    Users
+} from 'lucide-react';
 
 const JoinForm = ({ onJoin }) => {
     const [nickname, setNickname] = useState('');
