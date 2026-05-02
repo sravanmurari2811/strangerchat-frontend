@@ -102,16 +102,18 @@ export const useWebRTC = () => {
             clearChat();
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
+            setChatMode(mode); // Explicitly sync the chat mode in store
 
             addMessage({ text: `${peerNickname} connected`, sender: 'system', type: 'connected', timestamp: new Date() });
 
             if (mode === 'video') {
-                setChatMode('video');
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                     setLocalStream(stream);
                     if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
                     else setupPeerConnection(peerId, stream);
-                }).catch(() => {});
+                }).catch(() => {
+                    addMessage({ text: "Could not access camera/mic for video chat", sender: 'system', type: 'disconnected', timestamp: new Date() });
+                });
             }
         };
 
@@ -123,7 +125,6 @@ export const useWebRTC = () => {
             const currentRequest = useChatStore.getState().callRequest;
             setCallRequest(null);
 
-            // Critical: Force initiator to switch view
             const finalMode = type || currentRequest || 'video';
             setChatMode(finalMode);
 
@@ -209,6 +210,7 @@ export const useWebRTC = () => {
 
     const join = (userData) => {
         setStatus('searching');
+        setChatMode(userData.chatMode);
         socket.emit('join-matchmaking', userData);
     };
 
