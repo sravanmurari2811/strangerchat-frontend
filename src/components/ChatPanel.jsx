@@ -184,7 +184,7 @@ const ChatPanel = ({ onSendMessage, onNextUser, requestCall, handleAcceptCall, d
                     </button>
                 </div>
             </footer>
-        </div>
+        </section>
     );
 };
 
