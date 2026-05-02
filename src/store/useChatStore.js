@@ -6,14 +6,13 @@ const useChatStore = create((set) => ({
     messages: [],
     status: 'idle', // idle, searching, connected, disconnected
     chatMode: 'text', // Active mode: 'text', 'audio', 'video'
-    initialMode: 'text', // Selected on Home: 'text', 'video'
+    initialMode: 'text', // Mode selected on Home
     localStream: null,
     remoteStream: null,
 
     // Call agreement states
     callRequest: null, // 'audio' | 'video' | null (outgoing)
     incomingCall: null, // 'audio' | 'video' | null (incoming)
-    callAccepted: false,
 
     setUser: (user) => set({ user }),
     setPeer: (peer) => set({ peer }),
@@ -25,7 +24,6 @@ const useChatStore = create((set) => ({
 
     setCallRequest: (type) => set({ callRequest: type }),
     setIncomingCall: (type) => set({ incomingCall: type }),
-    setCallAccepted: (accepted) => set({ callAccepted: accepted }),
 
     addMessage: (message) => set((state) => ({
         messages: [...state.messages, message]
@@ -43,8 +41,7 @@ const useChatStore = create((set) => ({
             remoteStream: null,
             callRequest: null,
             incomingCall: null,
-            callAccepted: false,
-            chatMode: initialMode, // Revert to what user picked on home screen
+            chatMode: initialMode || 'text',
             localStream: null
         });
     },
@@ -63,7 +60,6 @@ const useChatStore = create((set) => ({
             remoteStream: null,
             callRequest: null,
             incomingCall: null,
-            callAccepted: false,
             chatMode: 'text',
             initialMode: 'text'
         });

@@ -8,9 +8,10 @@ import { MessageSquare, ShieldCheck, Zap } from 'lucide-react';
 
 function App() {
     const { status, setUser, chatMode } = useChatStore();
-    const { join, sendMessage, nextUser } = useWebRTC();
 
-    // Wake up backend
+    // IMPORTANT: useWebRTC is only called ONCE here at the root.
+    const rtc = useWebRTC();
+
     useEffect(() => {
         const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
         fetch(`${BACKEND_URL}/health`).catch(() => {});
@@ -18,20 +19,23 @@ function App() {
 
     const handleJoin = (userData) => {
         setUser(userData);
-        join(userData);
+        rtc.join(userData);
     };
 
     if (status === 'idle') {
-        return <JoinForm onJoin={handleJoin} />;
+        return (
+            <>
+                <div className="space-bg" />
+                <JoinForm onJoin={handleJoin} />
+            </>
+        );
     }
 
-    // Determine if we show the video panel
-    // It shows if we are in video or audio mode
     const showMedia = chatMode === 'video' || chatMode === 'audio';
 
     return (
         <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-[#020617] relative">
-            <div className="mesh-bg opacity-30" />
+            <div className="space-bg" />
 
             {/* Main Area: Media Panel or Placeholder */}
             {showMedia ? (
@@ -39,12 +43,7 @@ function App() {
                     <VideoPanel />
                 </main>
             ) : (
-                <main className="hidden md:flex flex-1 relative h-full bg-[#020617] items-center justify-center border-r border-white/5 overflow-hidden">
-                    {/* Decorative 3D-like background for text mode */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 blur-[120px] rounded-full animate-pulse" />
-                    </div>
-
+                <main className="hidden md:flex flex-1 relative h-full items-center justify-center border-r border-white/5 overflow-hidden">
                     <div className="flex flex-col items-center justify-center space-y-8 relative z-10">
                         <div className="relative">
                             <div className="w-40 h-40 border-2 border-dashed border-slate-800 rounded-full flex items-center justify-center animate-[spin_20s_linear_infinite]">
@@ -72,8 +71,11 @@ function App() {
             <aside className={`flex flex-col overflow-hidden z-30 transition-all duration-700 ease-in-out
                 ${!showMedia ? 'h-full w-full' : 'h-[55%] md:h-full w-full md:w-[380px] lg:w-[420px] xl:w-[480px] border-t md:border-t-0 md:border-l border-white/5'}`}>
                 <ChatPanel
-                    onSendMessage={sendMessage}
-                    onNextUser={nextUser}
+                    onSendMessage={rtc.sendMessage}
+                    onNextUser={rtc.nextUser}
+                    requestCall={rtc.requestCall}
+                    handleAcceptCall={rtc.handleAcceptCall}
+                    declineCall={rtc.declineCall}
                 />
             </aside>
         </div>
