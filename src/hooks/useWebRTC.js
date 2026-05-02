@@ -8,7 +8,7 @@ const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true })
 export const useWebRTC = () => {
     const {
         peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat,
-        setIncomingCall, setCallRequest, setChatMode, setLocalStream
+        setIncomingCall, setCallRequest, setChatMode, setLocalStream, clearChat
     } = useChatStore();
 
     const pc = useRef(null);
@@ -84,8 +84,13 @@ export const useWebRTC = () => {
 
     useEffect(() => {
         const onMatched = ({ peerId, peerNickname, mode, initiator }) => {
+            clearChat();
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
+
+            // Add "Connected" message
+            addMessage({ text: `${peerNickname} connected`, sender: 'system', type: 'connected', timestamp: new Date() });
+
             if (mode === 'video') {
                 setChatMode('video');
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
@@ -96,18 +101,25 @@ export const useWebRTC = () => {
             }
         };
 
-        socket.on('waiting', () => setStatus('searching'));
+        socket.on('waiting', () => {
+            setStatus('searching');
+        });
+
         socket.on('matched', onMatched);
+
         socket.on('incoming-call', ({ type }) => setIncomingCall(type));
+
         socket.on('call-accepted', ({ from }) => {
             setCallRequest(null);
             const stream = useChatStore.getState().localStream;
             if (stream) initiateWebRTC(from, stream);
         });
+
         socket.on('call-declined', () => {
             setCallRequest(null);
             alert("Stranger declined call");
         });
+
         socket.on('offer', async ({ from, offer }) => {
             const stream = useChatStore.getState().localStream;
             setupPeerConnection(from, stream);
@@ -121,15 +133,31 @@ export const useWebRTC = () => {
                 }
             } catch (e) {}
         });
+
         socket.on('answer', async ({ answer }) => {
             if (pc.current) pc.current.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {});
         });
+
         socket.on('ice-candidate', ({ candidate }) => {
             if (pc.current && pc.current.remoteDescription) pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
             else iceQueue.current.push(candidate);
         });
+
         socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
-        socket.on('peer-disconnected', () => { cleanup(); resetChat(); });
+
+        socket.on('peer-disconnected', () => {
+            const currentPeer = useChatStore.getState().peer;
+            if (currentPeer) {
+                addMessage({
+                    text: `${currentPeer.nickname} left`,
+                    sender: 'system',
+                    type: 'disconnected',
+                    timestamp: new Date()
+                });
+            }
+            cleanup();
+            resetChat(true); // Keep peer info so we know who left for the button/message
+        });
 
         return () => {
             socket.off('waiting'); socket.off('matched'); socket.off('incoming-call');
@@ -137,18 +165,29 @@ export const useWebRTC = () => {
             socket.off('answer'); socket.off('ice-candidate'); socket.off('receive-message');
             socket.off('peer-disconnected');
         };
-    }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode]);
+    }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode, clearChat]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
-        if (p) {
+        const status = useChatStore.getState().status;
+        if (p && status === 'connected') {
             socket.emit('send-message', { to: p.id, message: text });
             addMessage({ text, sender: 'me', timestamp: new Date() });
         }
     };
 
-    const nextUser = () => { cleanup(); resetChat(); setStatus('searching'); socket.emit('next-user'); };
-    const join = (userData) => { setStatus('searching'); socket.emit('join-matchmaking', userData); };
+    const nextUser = () => {
+        cleanup();
+        clearChat();
+        setStatus('searching');
+        socket.emit('next-user');
+    };
+
+    const join = (userData) => {
+        setStatus('searching');
+        socket.emit('join-matchmaking', userData);
+    };
+
     const requestCall = async (type) => {
         const p = useChatStore.getState().peer;
         if (!p) return;

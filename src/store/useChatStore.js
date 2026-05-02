@@ -29,22 +29,24 @@ const useChatStore = create((set) => ({
         messages: [...state.messages, message]
     })),
 
-    resetChat: () => {
+    resetChat: (keepPeerInfo = false) => {
         const { localStream, initialMode } = useChatStore.getState();
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
         }
-        set({
-            peer: null,
-            messages: [],
+        set((state) => ({
+            peer: keepPeerInfo ? state.peer : null,
+            // We don't clear messages here if we want to show "Stranger left"
             status: 'disconnected',
             remoteStream: null,
             callRequest: null,
             incomingCall: null,
             chatMode: initialMode || 'text',
             localStream: null
-        });
+        }));
     },
+
+    clearChat: () => set({ messages: [], peer: null }),
 
     goHome: () => {
         const { localStream } = useChatStore.getState();
