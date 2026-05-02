@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles } from 'lucide-react';
+import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost } from 'lucide-react';
 
 const JoinForm = ({ onJoin }) => {
     const [nickname, setNickname] = useState('');
@@ -38,13 +38,13 @@ const JoinForm = ({ onJoin }) => {
     };
 
     return (
-        <div className="min-h-[100dvh] w-full bg-[#020617] text-slate-200 flex flex-col items-center justify-start lg:justify-center p-6 md:p-12 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans']">
-            {/* High-End Mesh Background */}
+        <div className="min-h-[100dvh] w-full bg-[#020617] text-slate-200 flex flex-col items-center justify-start p-6 md:p-12 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans']">
+            {/* Mesh Background */}
             <div className="mesh-bg" />
 
             <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10 py-6 md:py-12">
 
-                {/* Branding Section - Always at the top */}
+                {/* Branding Section */}
                 <div className="space-y-8 md:space-y-12 text-center lg:text-left animate-reveal flex flex-col items-center lg:items-start order-1">
                     <div className="space-y-4">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase">
@@ -55,7 +55,7 @@ const JoinForm = ({ onJoin }) => {
                             Mask<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">meet.</span>
                         </h1>
                         <p className="text-base md:text-xl text-slate-400 font-medium max-w-lg leading-relaxed opacity-80 px-4 md:px-0 mt-4">
-                            Connect worldwide while keeping your identity <span className="text-white border-b-2 border-blue-500/30">masked</span>. Fast, free, and completely professional.
+                            The ultimate <strong>free stranger video chat</strong> platform. Connect worldwide while keeping your identity masked. Fast, free, and secure.
                         </p>
                     </div>
 
@@ -78,10 +78,9 @@ const JoinForm = ({ onJoin }) => {
                 </div>
 
                 {/* Interaction Card */}
-                <div className="glass-panel p-1 md:p-1.5 rounded-[3rem] md:rounded-[4rem] shadow-2xl animate-reveal w-full max-w-[500px] mx-auto order-2" style={{ animationDelay: '0.1s' }}>
+                <div className="glass-panel p-1 md:p-1.5 rounded-[3rem] md:rounded-[4rem] shadow-2xl animate-reveal w-full max-w-[500px] mx-auto order-2">
                     <div className="bg-[#0f172a]/90 rounded-[2.8rem] md:rounded-[3.8rem] p-8 md:p-14 space-y-8 md:space-y-12">
 
-                        {/* Choice Switcher - Refined sizing */}
                         <div className="flex p-1.5 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
                             <button
                                 type="button"
@@ -107,7 +106,6 @@ const JoinForm = ({ onJoin }) => {
                             </button>
                         </div>
 
-                        {/* Preview Box - Fitted scale */}
                         <div className="relative aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-white/10 ring-1 ring-white/5 shadow-2xl">
                             {chatMode === 'video' ? (
                                 <>
@@ -126,7 +124,6 @@ const JoinForm = ({ onJoin }) => {
                             )}
                         </div>
 
-                        {/* Details Form */}
                         <form onSubmit={handleSubmit} className="space-y-6 md:space-y-10">
                             <div className="space-y-4">
                                 <div className="relative group">
@@ -176,6 +173,34 @@ const JoinForm = ({ onJoin }) => {
                             </button>
                         </form>
                     </div>
+                </div>
+            </div>
+
+            {/* SEO FOOTER SECTION */}
+            <div className="max-w-4xl w-full mt-20 pb-20 relative z-10 border-t border-white/5 pt-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 opacity-40 hover:opacity-100 transition-opacity duration-500">
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-black tracking-widest uppercase text-white">Stranger Chat Redefined</h2>
+                        <p className="text-sm leading-relaxed">
+                            Welcome to <strong>StrangerChat</strong>, the premier destination for high-quality, anonymous interaction.
+                            Our platform is the top-rated <strong>MaskMeet alternative</strong>, designed to connect you with
+                            people around the globe instantly. Whether you prefer <strong>free stranger video chat</strong> or
+                            secure text messaging, our technology ensures a seamless experience.
+                        </p>
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-black tracking-widest uppercase text-white">Why Choose MaskMeet?</h2>
+                        <p className="text-sm leading-relaxed">
+                            Unlike other <strong>random video chat</strong> sites, we prioritize your security and privacy.
+                            Our "masked" philosophy means you decide how much you share. Talk to strangers, make new friends,
+                            and enjoy the best <strong>stranger chat</strong> features available online today. 100% Free. 100% Real.
+                        </p>
+                    </div>
+                </div>
+                <div className="mt-12 text-center">
+                    <p className="text-[10px] font-black tracking-[0.3em] uppercase opacity-20">
+                        © 2023 MaskMeet & StrangerChat. All Rights Reserved.
+                    </p>
                 </div>
             </div>
         </div>
