@@ -1,21 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import {
-    User,
-    Video,
-    MessageSquare,
-    Zap,
-    ShieldCheck,
-    ChevronRight,
-    Ghost,
-    Sparkles,
-    Globe,
-    Shield,
-    AlertCircle,
-    Mars,
-    Venus,
-    Users
-} from 'lucide-react';
+import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles, Globe, Shield, AlertCircle, Users } from 'lucide-react';
 
 const JoinForm = ({ onJoin }) => {
     const [nickname, setNickname] = useState('');
@@ -68,23 +53,18 @@ const JoinForm = ({ onJoin }) => {
     };
 
     const genderOptions = [
-        { id: 'male', label: 'Male', icon: Mars, color: 'text-blue-400', activeBorder: 'border-blue-500/50', activeBg: 'bg-blue-500/10' },
-        { id: 'female', label: 'Female', icon: Venus, color: 'text-rose-400', activeBorder: 'border-rose-500/50', activeBg: 'bg-rose-500/10' },
+        { id: 'male', label: 'Male', icon: User, color: 'text-blue-400', activeBorder: 'border-blue-500/50', activeBg: 'bg-blue-500/10' },
+        { id: 'female', label: 'Female', icon: User, color: 'text-rose-400', activeBorder: 'border-rose-500/50', activeBg: 'bg-rose-500/10' },
         { id: 'other', label: 'Other', icon: Users, color: 'text-purple-400', activeBorder: 'border-purple-500/50', activeBg: 'bg-purple-500/10' }
     ];
 
     return (
         <main className="min-h-screen w-full flex flex-col items-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] perspective-2000 scroll-smooth" role="main">
-
-            {/* SEO Content */}
             <h1 className="sr-only">MaskMeet - Free Anonymous Stranger Video Chat & Text Matchmaking</h1>
-
-            {/* 3D Decorative Elements */}
             <div className="fixed top-20 left-[10%] w-24 h-24 bg-blue-500/10 rounded-3xl rotate-12 blur-2xl animate-pulse pointer-events-none -z-10" />
             <div className="fixed bottom-20 right-[10%] w-32 h-32 bg-purple-500/10 rounded-full -rotate-12 blur-3xl animate-pulse pointer-events-none -z-10" />
 
             <div className="max-w-5xl w-full flex flex-col items-center z-10 preserve-3d py-6 md:py-10">
-
                 <header className="text-center mb-8 md:mb-12 space-y-3 animate-reveal">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-blue-400 text-[9px] font-black tracking-[0.3em] uppercase backdrop-blur-md">
                         <Sparkles size={10} className="animate-pulse" />
@@ -99,7 +79,6 @@ const JoinForm = ({ onJoin }) => {
                 </header>
 
                 <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-stretch max-w-5xl px-4">
-
                     <form
                         onSubmit={(e) => e.preventDefault()}
                         className="glass-panel p-5 md:p-8 rounded-[2rem] flex flex-col justify-between space-y-6 animate-reveal hover-3d-card preserve-3d"
@@ -248,7 +227,6 @@ const JoinForm = ({ onJoin }) => {
                             )}
                         </div>
                     </aside>
-
                 </div>
 
                 <section className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 opacity-50 animate-reveal" style={{ animationDelay: '0.3s' }} aria-label="Trust Badges">
