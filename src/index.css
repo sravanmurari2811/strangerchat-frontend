@@ -1,82 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color-scheme: dark;
 }
 
-/* --- Absolute Screen Fit --- */
-html, body {
+body {
   margin: 0;
-  padding: 0;
-  background-color: #020617 !important;
-  color: #f1f5f9;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #020617;
+  color: #f8fafc;
   overflow: hidden;
-  height: 100dvh;
-  width: 100vw;
-  -webkit-font-smoothing: antialiased;
 }
 
-#root {
-  height: 100dvh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
+/* 3D Perspective for Cards */
+.perspective-1000 {
+  perspective: 1000px;
 }
 
-/* --- Maskmeet Design System --- */
+.rotate-y-1 {
+  transform: rotateY(2deg) rotateX(1deg);
+}
+
+/* Mesh Gradient Background */
+.mesh-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(210, 100%, 20%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(260, 100%, 20%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(210, 100%, 20%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(260, 100%, 20%, 0.15) 0px, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* High-End Glass Panel */
 .glass-panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-  backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .luxury-glass {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.mesh-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    radial-gradient(at 0% 0%, hsla(217,100%,15%,1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(240,100%,10%,1) 0, transparent 50%),
-    radial-gradient(at 50% 100%, hsla(222,100%,12%,1) 0, transparent 50%);
-  filter: blur(80px);
+/* Animations */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-reveal {
+  animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 4s ease-in-out infinite;
 }
 
 .brand-glow {
-  text-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+  text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
 }
 
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-black;
+.glow-blue {
+  box-shadow: 0 0 60px -15px rgba(59, 130, 246, 0.5);
 }
 
-.mirror { transform: scaleX(-1); }
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.mirror {
+  transform: rotateY(180deg);
+}
 
 .input-field {
-  @apply w-full bg-black/40 border border-white/5 rounded-2xl py-4 md:py-5 px-6 md:px-8 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-medium;
+  @apply w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-200 placeholder:text-slate-600;
 }
-
-.btn-primary {
-  @apply bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] py-5 md:py-6 rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98] flex items-center justify-center gap-4;
-}
-
-/* Scrollbar */
-.custom-scrollbar::-webkit-scrollbar { width: 3px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-blue-500/20 rounded-full hover:bg-blue-500/40 transition-colors; }
-
-/* Cinematic Entrance */
-@keyframes reveal {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(10px); }
-  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
-.animate-reveal { animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }

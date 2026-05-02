@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageCircle, Home, Shield, UserX } from 'lucide-react';
+import { Send, SkipForward, MessageCircle, Home, Shield, UserX, Video, Mic, PhoneIncoming, X } from 'lucide-react';
+import { useWebRTC } from '../hooks/useWebRTC';
 
 const ChatPanel = ({ onSendMessage, onNextUser }) => {
     const [message, setMessage] = useState('');
-    const { messages, status, peer, goHome } = useChatStore();
+    const {
+        messages, status, peer, goHome, chatMode,
+        incomingCall, callRequest, setIncomingCall, setCallRequest
+    } = useChatStore();
+    const { requestCall, handleAcceptCall } = useWebRTC();
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -21,8 +26,9 @@ const ChatPanel = ({ onSendMessage, onNextUser }) => {
 
     return (
         <div className="flex flex-col h-full bg-[#020617]/95 backdrop-blur-3xl md:border-l border-white/5 w-full relative overflow-hidden font-['Plus_Jakarta_Sans']">
-            {/* Header */}
-            <div className="px-5 py-4 md:px-8 md:py-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+
+            {/* Header with Call Options */}
+            <div className="px-5 py-4 md:px-8 md:py-6 border-b border-white/5 flex justify-between items-center bg-black/20 z-50">
                 <div className="flex items-center gap-3 md:gap-4">
                     <div className="relative">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600/10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -36,27 +42,79 @@ const ChatPanel = ({ onSendMessage, onNextUser }) => {
                         <h2 className="font-black text-xs md:text-sm text-white tracking-tight uppercase truncate max-w-[100px] md:max-w-none">
                             {status === 'connected' ? peer?.nickname : 'Secure Chat'}
                         </h2>
-
-                        {/* Final Connection Signals */}
-                        {status === 'connected' ? (
-                            <div className="flex items-center gap-1.5 animate-reveal">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-400">stranger connected</span>
+                        {status === 'connected' && (
+                             <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-400">online</span>
                             </div>
-                        ) : status === 'disconnected' ? (
-                            <div className="flex items-center gap-1.5 animate-reveal">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
-                                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-rose-500">stranger left</span>
-                            </div>
-                        ) : (
-                            <span className="block text-[8px] md:text-[10px] font-black uppercase tracking-widest text-blue-400 opacity-60">Establishing...</span>
                         )}
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <Shield size={16} className="text-slate-700 hidden sm:block" />
-                </div>
+
+                {/* Call Actions (Only show in Text mode or when connected) */}
+                {status === 'connected' && chatMode === 'text' && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => requestCall('audio')}
+                            disabled={callRequest !== null}
+                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'audio' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
+                        >
+                            <Mic size={18} />
+                        </button>
+                        <button
+                            onClick={() => requestCall('video')}
+                            disabled={callRequest !== null}
+                            className={`p-3 rounded-xl border border-white/5 transition-all active:scale-90 ${callRequest === 'video' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'}`}
+                        >
+                            <Video size={18} />
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Incoming Call Overlay */}
+            {incomingCall && (
+                <div className="absolute top-20 left-4 right-4 z-[100] animate-reveal">
+                    <div className="bg-blue-600 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center space-y-4 border border-white/20">
+                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
+                            {incomingCall === 'video' ? <Video size={32} /> : <Mic size={32} />}
+                        </div>
+                        <div className="text-center">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Incoming Request</p>
+                            <h3 className="text-lg font-black">{peer?.nickname} wants a {incomingCall} call</h3>
+                        </div>
+                        <div className="flex gap-4 w-full">
+                            <button
+                                onClick={handleAcceptCall}
+                                className="flex-1 bg-white text-blue-600 font-black py-4 rounded-2xl hover:bg-slate-100 transition-all active:scale-95"
+                            >
+                                ACCEPT
+                            </button>
+                            <button
+                                onClick={() => setIncomingCall(null)}
+                                className="flex-1 bg-black/20 text-white font-black py-4 rounded-2xl hover:bg-black/30 transition-all active:scale-95"
+                            >
+                                DECLINE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Outgoing Request Status */}
+            {callRequest && (
+                <div className="px-8 py-3 bg-blue-600/20 border-b border-blue-500/20 flex justify-between items-center animate-reveal">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+                            Waiting for stranger to accept {callRequest} call...
+                        </span>
+                    </div>
+                    <button onClick={() => setCallRequest(null)} className="text-slate-500 hover:text-white">
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
 
             {/* Messages Area */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 custom-scrollbar scroll-smooth">
@@ -69,12 +127,19 @@ const ChatPanel = ({ onSendMessage, onNextUser }) => {
                     </div>
                 )}
 
-                {status === 'disconnected' && messages.length > 0 && (
+                {status === 'disconnected' && (
                     <div className="flex flex-col items-center justify-center h-full space-y-6 animate-reveal">
                         <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/20">
                             <UserX size={28} className="text-rose-500" />
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">The stranger has left the chat</p>
+                    </div>
+                )}
+
+                {messages.length === 0 && status === 'connected' && (
+                    <div className="text-center py-10 opacity-20">
+                        <p className="text-[10px] font-black uppercase tracking-widest">Connected with a random stranger</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest mt-1">Say hello!</p>
                     </div>
                 )}
 

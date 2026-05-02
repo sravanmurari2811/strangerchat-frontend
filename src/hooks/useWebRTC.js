@@ -6,25 +6,28 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true });
 
 export const useWebRTC = () => {
-    const { peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat } = useChatStore();
+    const {
+        peer, setPeer, setStatus, setRemoteStream, addMessage, resetChat,
+        setIncomingCall, setCallAccepted, setCallRequest, chatMode, setChatMode,
+        setLocalStream
+    } = useChatStore();
+
     const pc = useRef(null);
     const iceQueue = useRef([]);
 
     const cleanup = useCallback(() => {
         if (pc.current) { pc.current.close(); pc.current = null; }
         iceQueue.current = [];
-    }, []);
-
-    const processIceQueue = useCallback(() => {
-        if (!pc.current || !pc.current.remoteDescription) return;
-        while (iceQueue.current.length > 0) {
-            const candidate = iceQueue.current.shift();
-            pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+        const localStream = useChatStore.getState().localStream;
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            setLocalStream(null);
         }
-    }, []);
+    }, [setLocalStream]);
 
-    const setupPeerConnection = useCallback((remoteSocketId) => {
-        cleanup();
+    const setupPeerConnection = useCallback((remoteSocketId, stream) => {
+        if (pc.current) pc.current.close();
+
         pc.current = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
         });
@@ -37,59 +40,94 @@ export const useWebRTC = () => {
             if (e.streams && e.streams[0]) setRemoteStream(e.streams[0]);
         };
 
-        const localStream = useChatStore.getState().localStream;
-        if (localStream) {
-            localStream.getTracks().forEach(track => pc.current.addTrack(track, localStream));
+        if (stream) {
+            stream.getTracks().forEach(track => pc.current.addTrack(track, stream));
         }
-    }, [cleanup, setRemoteStream]);
+    }, [setRemoteStream]);
 
-    const initiateCall = useCallback(async (remoteSocketId) => {
-        setupPeerConnection(remoteSocketId);
+    const initiateCall = useCallback(async (type) => {
+        const peer = useChatStore.getState().peer;
+        if (!peer) return;
+
         try {
-            const offer = await pc.current.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: type === 'video',
+                audio: true
+            });
+            setLocalStream(stream);
+            setChatMode(type);
+            setupPeerConnection(peer.id, stream);
+
+            const offer = await pc.current.createOffer();
             await pc.current.setLocalDescription(offer);
-            socket.emit('offer', { to: remoteSocketId, offer });
-        } catch (e) { console.error('Signaling Error:', e); }
-    }, [setupPeerConnection]);
+            socket.emit('offer', { to: peer.id, offer });
+            setCallRequest(type);
+        } catch (err) {
+            console.error("Media access error:", err);
+            alert("Could not access camera/microphone");
+        }
+    }, [setupPeerConnection, setLocalStream, setChatMode, setCallRequest]);
 
-    const handleOffer = useCallback(async (from, offer) => {
-        setupPeerConnection(from);
+    const handleAcceptCall = useCallback(async () => {
+        const incoming = useChatStore.getState().incomingCall;
+        const peer = useChatStore.getState().peer;
+        if (!incoming || !peer) return;
+
         try {
-            await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await pc.current.createAnswer();
-            await pc.current.setLocalDescription(answer);
-            socket.emit('answer', { to: from, answer });
-            processIceQueue();
-        } catch (e) { console.error('Signaling Error:', e); }
-    }, [setupPeerConnection, processIceQueue]);
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: incoming === 'video',
+                audio: true
+            });
+            setLocalStream(stream);
+            setChatMode(incoming);
+            setCallAccepted(true);
+            setIncomingCall(null);
+
+            socket.emit('accept-call', { to: peer.id, type: incoming });
+        } catch (err) {
+            console.error("Media access error:", err);
+        }
+    }, [setLocalStream, setChatMode, setCallAccepted, setIncomingCall]);
 
     useEffect(() => {
         socket.on('waiting', () => setStatus('searching'));
 
-        socket.on('matched', ({ peerId, peerNickname, initiator, mode }) => {
+        socket.on('matched', ({ peerId, peerNickname }) => {
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
-            if (mode === 'video' && initiator) {
-                setTimeout(() => initiateCall(peerId), 1500);
-            }
         });
 
-        socket.on('offer', ({ from, offer }) => handleOffer(from, offer));
+        socket.on('incoming-call', ({ from, type }) => {
+            setIncomingCall(type);
+        });
+
+        socket.on('call-accepted', async ({ from, type }) => {
+            setCallAccepted(true);
+            setCallRequest(null);
+            // We already sent offer, now just wait for answer
+        });
+
+        socket.on('offer', async ({ from, offer }) => {
+            const stream = useChatStore.getState().localStream;
+            setupPeerConnection(from, stream);
+            try {
+                await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await pc.current.createAnswer();
+                await pc.current.setLocalDescription(answer);
+                socket.emit('answer', { to: from, answer });
+            } catch (e) { console.error('Signaling Error:', e); }
+        });
 
         socket.on('answer', async ({ answer }) => {
             if (pc.current) {
                 try {
                     await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
-                    processIceQueue();
                 } catch (e) {}
             }
         });
 
         socket.on('ice-candidate', ({ candidate }) => {
-            if (!candidate) return;
-            if (!pc.current || !pc.current.remoteDescription) {
-                iceQueue.current.push(candidate);
-            } else {
+            if (pc.current && candidate) {
                 pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
             }
         });
@@ -100,19 +138,21 @@ export const useWebRTC = () => {
 
         socket.on('peer-disconnected', () => {
             cleanup();
-            resetChat(); // Correctly sets status to 'disconnected' for manual rematch
+            resetChat();
         });
 
         return () => {
             socket.off('waiting');
             socket.off('matched');
+            socket.off('incoming-call');
+            socket.off('call-accepted');
             socket.off('offer');
             socket.off('answer');
             socket.off('ice-candidate');
             socket.off('receive-message');
             socket.off('peer-disconnected');
         };
-    }, [initiateCall, handleOffer, setPeer, setStatus, addMessage, cleanup, resetChat, processIceQueue]);
+    }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, setIncomingCall, setCallAccepted, setCallRequest]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
@@ -134,5 +174,13 @@ export const useWebRTC = () => {
         socket.emit('join-matchmaking', userData);
     };
 
-    return { join, sendMessage, nextUser };
+    const requestCall = (type) => {
+        const p = useChatStore.getState().peer;
+        if (p) {
+            initiateCall(type);
+            socket.emit('request-call', { to: p.id, type });
+        }
+    };
+
+    return { join, sendMessage, nextUser, requestCall, handleAcceptCall };
 };

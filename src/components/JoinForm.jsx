@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost } from 'lucide-react';
+import { User, Video, MessageSquare, Zap, ShieldCheck, ChevronRight, Ghost, Sparkles, Globe2, Shield } from 'lucide-react';
 
 const JoinForm = ({ onJoin }) => {
     const [nickname, setNickname] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('male');
-    const { chatMode, setChatMode, setLocalStream, localStream } = useChatStore();
+    const { initialMode, setInitialMode, setLocalStream, localStream } = useChatStore();
     const videoRef = useRef(null);
 
     useEffect(() => {
         const startPreview = async () => {
-            if (chatMode === 'video') {
+            if (initialMode === 'video') {
                 if (localStream) {
                     if (videoRef.current) videoRef.current.srcObject = localStream;
                     return;
@@ -23,189 +23,176 @@ const JoinForm = ({ onJoin }) => {
                 } catch (err) {
                     console.error("Camera access denied:", err);
                 }
+            } else {
+                // If switching to text, stop the preview stream
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    setLocalStream(null);
+                }
             }
         };
         startPreview();
-    }, [chatMode, setLocalStream, localStream]);
+    }, [initialMode, setLocalStream]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e, mode) => {
         e.preventDefault();
-        if (age < 18) {
-            alert("Please confirm you are 18 or older to enter.");
+        if (!age || age < 18) {
+            alert("Please enter your age (18+ only).");
             return;
         }
-        onJoin({ nickname: nickname || 'Stranger', age, gender, chatMode });
+        setInitialMode(mode);
+        onJoin({ nickname: nickname || 'Stranger', age, gender, chatMode: mode });
     };
 
     return (
-        <div className="min-h-[100dvh] w-full bg-[#020617] text-slate-200 flex flex-col items-center justify-start p-6 md:p-12 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans']">
-            {/* Mesh Background */}
-            <div className="mesh-bg" />
+        <div className="min-h-screen w-full bg-[#020617] text-slate-200 flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden font-['Plus_Jakarta_Sans']">
+            {/* Animated 3D-like Background Elements */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
 
-            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10 py-6 md:py-12">
+            {/* Main Container */}
+            <div className="max-w-6xl w-full flex flex-col items-center z-10">
 
-                {/* Branding Section */}
-                <div className="space-y-8 md:space-y-12 text-center lg:text-left animate-reveal flex flex-col items-center lg:items-start order-1">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase">
-                            <Ghost size={14} className="text-blue-400" />
-                            Anonymous & Secure
-                        </div>
-                        <h1 className="text-6xl sm:text-7xl md:text-8xl xl:text-9xl font-black tracking-tighter text-white leading-tight lg:leading-[0.8] brand-glow">
-                            Mask<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">meet.</span>
-                        </h1>
-                        <p className="text-base md:text-xl text-slate-400 font-medium max-w-lg leading-relaxed opacity-80 px-4 md:px-0 mt-4">
-                            The ultimate <strong>free stranger video chat</strong> platform. Connect worldwide while keeping your identity masked. Fast, free, and secure.
-                        </p>
+                {/* Header Branding */}
+                <div className="text-center mb-12 space-y-4 animate-reveal">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase">
+                        <Sparkles size={12} />
+                        Next-Gen Anonymous Chat
                     </div>
-
-                    <div className="hidden lg:flex flex-wrap items-center gap-10 opacity-60">
-                        <div className="flex items-center gap-4">
-                            <Zap size={24} className="text-blue-400" />
-                            <div className="text-left font-black uppercase">
-                                <h4 className="text-white text-xs tracking-widest">Instant Match</h4>
-                                <p className="text-[10px] text-slate-500 tracking-widest">Zero Latency</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <ShieldCheck size={24} className="text-emerald-400" />
-                            <div className="text-left font-black uppercase">
-                                <h4 className="text-white text-xs tracking-widest">Privacy First</h4>
-                                <p className="text-[10px] text-slate-500 tracking-widest">End-to-End</p>
-                            </div>
-                        </div>
-                    </div>
+                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white leading-none brand-glow">
+                        Mask<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">meet.</span>
+                    </h1>
+                    <p className="text-slate-400 font-medium max-w-lg mx-auto text-lg">
+                        Meet strangers worldwide with a click. Similar to DuckChat, but with privacy and high-end video quality.
+                    </p>
                 </div>
 
-                {/* Interaction Card */}
-                <div className="glass-panel p-1 md:p-1.5 rounded-[3rem] md:rounded-[4rem] shadow-2xl animate-reveal w-full max-w-[500px] mx-auto order-2">
-                    <div className="bg-[#0f172a]/90 rounded-[2.8rem] md:rounded-[3.8rem] p-8 md:p-14 space-y-8 md:space-y-12">
+                <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-5xl">
 
-                        <div className="flex p-1.5 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
-                            <button
-                                type="button"
-                                onClick={() => setChatMode('video')}
-                                className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.6rem] text-[11px] font-black tracking-widest transition-all duration-300 ${
-                                    chatMode === 'video'
-                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]'
-                                    : 'text-slate-500 hover:text-slate-300'
-                                }`}
-                            >
-                                <Video size={16} /> VIDEO
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setChatMode('text')}
-                                className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.6rem] text-[11px] font-black tracking-widest transition-all duration-300 ${
-                                    chatMode === 'text'
-                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]'
-                                    : 'text-slate-500 hover:text-slate-300'
-                                }`}
-                            >
-                                <MessageSquare size={16} /> TEXT
-                            </button>
-                        </div>
-
-                        <div className="relative aspect-video bg-black rounded-[2.5rem] overflow-hidden border border-white/10 ring-1 ring-white/5 shadow-2xl">
-                            {chatMode === 'video' ? (
-                                <>
-                                    <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                                    <div className="absolute bottom-6 left-8 flex items-center gap-3 px-4 py-2 bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10">
-                                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/90">LIVE PREVIEW</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center space-y-4 text-slate-700 bg-black/40">
-                                    <Ghost size={48} className="opacity-10 animate-float" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.5em] opacity-30 text-center px-8 leading-loose">Privacy Protocol Active</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-10">
+                    {/* Interaction Card (Left) */}
+                    <div className="glass-panel p-8 md:p-12 rounded-[2.5rem] flex flex-col justify-between space-y-8 animate-reveal" style={{ animationDelay: '0.1s' }}>
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-black text-white tracking-tight">Personalize Profile</h2>
                             <div className="space-y-4">
                                 <div className="relative group">
-                                    <User className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={20} />
                                     <input
                                         type="text"
                                         value={nickname}
                                         onChange={(e) => setNickname(e.target.value)}
-                                        placeholder="Pick a nickname..."
-                                        className="input-field pl-16 font-bold text-base"
+                                        placeholder="Enter nickname..."
+                                        className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-200"
                                     />
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-4 md:gap-6">
+                                <div className="grid grid-cols-2 gap-4">
                                     <input
                                         type="number"
                                         required
                                         min="18"
                                         value={age}
                                         onChange={(e) => setAge(e.target.value)}
-                                        placeholder="Age"
-                                        className="input-field font-bold text-base text-center"
+                                        placeholder="Age (18+)"
+                                        className="bg-black/40 border border-white/5 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500/50 transition-all font-bold text-center"
                                     />
-                                    <div className="relative">
-                                        <select
-                                            value={gender}
-                                            onChange={(e) => setGender(e.target.value)}
-                                            className="input-field appearance-none cursor-pointer font-bold text-base text-center pr-10"
-                                        >
-                                            <option value="male">Male</option>
-                                            <option value="female">Female</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                        <ChevronRight size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none" />
-                                    </div>
+                                    <select
+                                        value={gender}
+                                        onChange={(e) => setGender(e.target.value)}
+                                        className="bg-black/40 border border-white/5 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500/50 transition-all font-bold text-center appearance-none cursor-pointer"
+                                    >
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 pt-4">
+                            <button
+                                onClick={(e) => handleSubmit(e, 'video')}
+                                className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-2xl font-black tracking-widest text-white shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            >
+                                <div className="flex items-center justify-center gap-3 relative z-10">
+                                    <Video size={24} /> START VIDEO CHAT
+                                    <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            </button>
 
                             <button
-                                type="submit"
-                                className="btn-primary w-full group py-6 md:py-7 rounded-[2rem] shadow-2xl shadow-blue-600/40"
+                                onClick={(e) => handleSubmit(e, 'text')}
+                                className="group bg-slate-800/50 border border-white/10 p-6 rounded-2xl font-black tracking-widest text-slate-300 hover:bg-slate-800 hover:text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
-                                <span className="relative z-10 flex items-center gap-4 text-base tracking-[0.2em]">
-                                    START CHATTING
-                                    <ChevronRight className="group-hover:translate-x-2 transition-transform size-6" />
-                                </span>
+                                <div className="flex items-center justify-center gap-3">
+                                    <MessageSquare size={24} /> START TEXT CHAT
+                                </div>
                             </button>
-                        </form>
+                        </div>
+                    </div>
+
+                    {/* Preview/Info Card (Right) */}
+                    <div className="relative group perspective-1000 animate-reveal" style={{ animationDelay: '0.2s' }}>
+                        <div className="h-full bg-gradient-to-br from-slate-900 to-black border border-white/5 rounded-[2.5rem] overflow-hidden relative shadow-2xl transition-transform duration-700 group-hover:rotate-y-1">
+                            {initialMode === 'video' ? (
+                                <div className="h-full w-full relative">
+                                    <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror opacity-80" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                                    <div className="absolute bottom-8 left-8 flex items-center gap-3 px-4 py-2 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10">
+                                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Camera Active</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-full w-full flex flex-col items-center justify-center p-12 space-y-8 text-center">
+                                    <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center animate-bounce-slow">
+                                        <Ghost size={48} className="text-blue-400 opacity-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-2xl font-black text-white">Privacy Mode</h3>
+                                        <p className="text-slate-500 text-sm leading-relaxed">
+                                            Text-first connection. You can request audio or video calls once you've met someone cool.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-4 opacity-40">
+                                        <div className="p-3 bg-white/5 rounded-xl"><Globe2 size={20} /></div>
+                                        <div className="p-3 bg-white/5 rounded-xl"><Shield size={20} /></div>
+                                        <div className="p-3 bg-white/5 rounded-xl"><Zap size={20} /></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Trust Footer */}
+                <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-30 animate-reveal" style={{ animationDelay: '0.3s' }}>
+                    <div className="flex flex-col items-center gap-2">
+                        <ShieldCheck className="text-blue-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">End-to-End</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <Zap className="text-yellow-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Low Latency</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <Globe2 className="text-emerald-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Global Pool</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <User className="text-purple-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">100% Private</span>
                     </div>
                 </div>
             </div>
 
-            {/* SEO & TRUST FOOTER */}
-            <div className="max-w-4xl w-full mt-20 pb-20 relative z-10 border-t border-white/5 pt-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 opacity-40 hover:opacity-100 transition-opacity duration-500">
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-black tracking-widest uppercase text-white">Stranger Chat Redefined</h2>
-                        <p className="text-sm leading-relaxed">
-                            Welcome to <strong>StrangerChat</strong>, the premier destination for high-quality, anonymous interaction.
-                            Our platform is the top-rated <strong>MaskMeet alternative</strong>, designed to connect you with
-                            people around the globe instantly. Whether you prefer <strong>free stranger video chat</strong> or
-                            secure text messaging, our technology ensures a seamless experience.
-                        </p>
-                    </div>
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-black tracking-widest uppercase text-white">Why Choose MaskMeet?</h2>
-                        <p className="text-sm leading-relaxed">
-                            Unlike other <strong>random video chat</strong> sites, we prioritize your security and privacy.
-                            Our "masked" philosophy means you decide how much you share. Talk to strangers, make new friends,
-                            and enjoy the best <strong>stranger chat</strong> features available online today. 100% Free. 100% Real.
-                        </p>
-                        <div className="flex gap-4 pt-2">
-                            <a href="/privacy.html" className="text-[10px] font-black tracking-widest uppercase hover:text-blue-400 transition-colors">Privacy Policy</a>
-                            <a href="/terms.html" className="text-[10px] font-black tracking-widest uppercase hover:text-blue-400 transition-colors">Terms of Service</a>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-12 text-center">
-                    <p className="text-[10px] font-black tracking-[0.3em] uppercase opacity-20">
-                        © 2023 MaskMeet & StrangerChat. All Rights Reserved.
-                    </p>
-                </div>
+            {/* Content for SEO at the bottom */}
+            <div className="max-w-4xl w-full mt-24 pb-12 border-t border-white/5 pt-12 relative z-10 opacity-40 text-center">
+                <h2 className="text-xl font-black tracking-widest uppercase text-white mb-4">Stranger Chat by MaskMeet</h2>
+                <p className="text-sm leading-relaxed max-w-2xl mx-auto">
+                    Experience the best <strong>free stranger video chat</strong>. Our platform is the top <strong>MaskMeet alternative</strong> for high-quality random connections.
+                    Whether you start with text or jump into video, we prioritize your safety and experience.
+                </p>
             </div>
         </div>
     );
