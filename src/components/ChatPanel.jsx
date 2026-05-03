@@ -1,29 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageSquare, Home, Video, Mic, Sparkles, Phone, X, MicOff, VideoOff, RefreshCw } from 'lucide-react';
+import { Send, SkipForward, MessageSquare, Home, Sparkles } from 'lucide-react';
 
 /**
  * ChatPanel Component
- * Handles messaging and call signaling UI with non-blocking banners.
+ * Handles messaging UI.
  */
 const ChatPanel = ({
     onSendMessage,
     onNextUser,
-    requestCall,
-    handleAcceptCall,
-    declineCall,
-    onCancelCall,
-    onLeave,
-    onEndCall,
-    onToggleMute,
-    onToggleVideo,
-    onSwitchCamera
+    onLeave
 }) => {
     const [message, setMessage] = useState('');
     const {
-        messages, status, peer, chatMode,
-        incomingCall, callRequest, initialMode,
-        isMuted, isVideoOff
+        messages, status, peer
     } = useChatStore();
     const scrollRef = useRef(null);
 
@@ -44,51 +34,8 @@ const ChatPanel = ({
         }
     };
 
-    const isMediaMode = chatMode === 'video' || chatMode === 'audio';
-
     return (
         <section className="flex flex-col h-full bg-[#0a0f1d]/60 backdrop-blur-3xl md:border-l border-white/5 w-full relative overflow-hidden font-['Plus_Jakarta_Sans']" aria-label="Chat Interface">
-
-            {/* Incoming Call Notification */}
-            {incomingCall && (
-                <div className="absolute top-0 left-0 right-0 z-[100] bg-blue-600/95 backdrop-blur-md p-3 md:p-4 flex items-center justify-between animate-reveal border-b border-white/10 shadow-2xl">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                            {incomingCall === 'video' ? <Video className="w-4 h-4 md:w-6 md:h-6 text-white" /> : <Phone className="w-4 h-4 md:w-6 md:h-6 text-white" />}
-                        </div>
-                        <div className="min-w-0 text-left">
-                            <p className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Incoming {incomingCall} call</p>
-                            <p className="text-white/70 text-[11px] font-bold truncate">{peer?.nickname} calling...</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={declineCall} className="p-2.5 bg-rose-500 hover:bg-rose-600 rounded-xl text-white transition-colors shadow-lg" title="Decline">
-                            <X className="w-4 h-4 md:w-6 md:h-6" />
-                        </button>
-                        <button onClick={handleAcceptCall} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-white transition-colors shadow-lg animate-bounce-slow" title="Accept">
-                            <Phone className="w-4 h-4 md:w-6 md:h-6" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Outgoing Call Notification */}
-            {callRequest && (
-                <div className="absolute top-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-md p-3 md:p-4 flex items-center justify-between animate-reveal border-b border-white/10 shadow-2xl">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                            <Phone className="w-4 h-4 md:w-6 md:h-6 text-blue-500 animate-pulse" />
-                        </div>
-                        <div className="min-w-0 text-left">
-                            <p className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Calling {peer?.nickname}...</p>
-                            <p className="text-slate-500 text-[10px] font-bold uppercase">Waiting for answer</p>
-                        </div>
-                    </div>
-                    <button onClick={onCancelCall} className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all whitespace-nowrap">
-                        Cancel
-                    </button>
-                </div>
-            )}
 
             {/* Header */}
             <header className="px-4 py-3 md:px-6 md:py-4 border-b border-white/5 flex justify-between items-center bg-slate-900/90 md:bg-black/30 backdrop-blur-xl z-50">
@@ -117,48 +64,11 @@ const ChatPanel = ({
                         )}
                     </div>
                 </div>
-
-                <div className="flex items-center gap-1.5 md:gap-2">
-                    {status === 'connected' && !isMediaMode && (
-                        <>
-                            <button onClick={() => requestCall('audio')} className="p-1.5 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all" title="Audio Call"><Mic className="w-4 h-4 md:w-5 md:h-5" /></button>
-                            <button onClick={() => requestCall('video')} className="p-1.5 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all" title="Video Call"><Video className="w-4 h-4 md:w-5 md:h-5" /></button>
-                            {initialMode === 'video' && (
-                                <button onClick={onNextUser} className="p-1.5 md:p-2.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 ml-1" title="End Call">
-                                    <Phone className="w-4 h-4 md:w-6 md:h-6 rotate-[135deg]" />
-                                    <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">End Call</span>
-                                </button>
-                            )}
-                        </>
-                    )}
-
-                    {(status === 'connected' || status === 'searching') && isMediaMode && (
-                        <>
-                            <button onClick={onToggleMute} className={`p-1.5 md:p-2.5 rounded-lg transition-all ${isMuted ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-400 hover:text-white'}`} title={isMuted ? "Unmute" : "Mute"}>
-                                {isMuted ? <MicOff className="w-4 h-4 md:w-6 md:h-6" /> : <Mic className="w-4 h-4 md:w-6 md:h-6" />}
-                            </button>
-                            {chatMode === 'video' && (
-                                <>
-                                    <button onClick={onToggleVideo} className={`p-1.5 md:p-2.5 rounded-lg transition-all ${isVideoOff ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-400 hover:text-white'}`} title={isVideoOff ? "Video On" : "Video Off"}>
-                                        {isVideoOff ? <VideoOff className="w-4 h-4 md:w-6 md:h-6" /> : <Video className="w-4 h-4 md:w-6 md:h-6" />}
-                                    </button>
-                                    <button onClick={onSwitchCamera} className="p-1.5 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all" title="Switch Camera"><RefreshCw className="w-4 h-4 md:w-6 md:h-6" /></button>
-                                </>
-                            )}
-                            {(initialMode === 'text' || status === 'connected') && (
-                                <button onClick={status === 'connected' ? onEndCall : onNextUser} className="p-1.5 md:p-2.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 ml-1" title="End Call">
-                                    <Phone className="w-4 h-4 md:w-6 md:h-6 rotate-[135deg]" />
-                                    <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">End Call</span>
-                                </button>
-                            )}
-                        </>
-                    )}
-                </div>
             </header>
 
             {/* Content Area: Search Animation or Chat Feed */}
             <div className="flex-1 relative min-h-0 w-full overflow-hidden">
-                {status === 'searching' && !isMediaMode ? (
+                {status === 'searching' ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-reveal px-6 text-center bg-[#0a0f1d]/40">
                         <div className="relative scale-90 md:scale-100">
                             <div className="w-20 h-20 md:w-36 md:h-36 bg-blue-500/5 rounded-full flex items-center justify-center border border-blue-500/10 backdrop-blur-3xl glow-blue">

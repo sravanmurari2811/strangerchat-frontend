@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import useChatStore from '../store/useChatStore';
+import React, { useState } from 'react';
 import {
   User,
-  Video,
   MessageSquare,
   Zap,
   ShieldCheck,
@@ -26,34 +24,8 @@ const JoinForm = ({ onJoin }) => {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('male');
   const [error, setError] = useState('');
-  const { initialMode, setInitialMode, setLocalStream, localStream } = useChatStore();
-  const videoRef = useRef(null);
 
-  useEffect(() => {
-    const startPreview = async () => {
-      if (initialMode === 'video') {
-        if (localStream) {
-          if (videoRef.current) videoRef.current.srcObject = localStream;
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-          setLocalStream(stream);
-          if (videoRef.current) videoRef.current.srcObject = stream;
-        } catch (err) {
-          console.error("Camera access denied:", err);
-        }
-      } else {
-        if (localStream) {
-          localStream.getTracks().forEach(track => track.stop());
-          setLocalStream(null);
-        }
-      }
-    };
-    startPreview();
-  }, [initialMode, setLocalStream, localStream]);
-
-  const handleSubmit = (e, mode) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
@@ -67,13 +39,12 @@ const JoinForm = ({ onJoin }) => {
       return;
     }
 
-    setInitialMode(mode);
-    onJoin({ nickname: nickname.trim() || 'Stranger', age, gender, chatMode: mode });
+    onJoin({ nickname: nickname.trim() || 'Stranger', age, gender });
   };
 
   return (
     <main className="min-h-[100dvh] w-full flex flex-col items-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] perspective-2000 scroll-smooth" role="main">
-      <h1 className="sr-only">MaskMeet - Free Anonymous Stranger Video Chat & Text Matchmaking</h1>
+      <h1 className="sr-only">MaskMeet - Free Anonymous Stranger Chat & Matchmaking</h1>
 
       <div className="fixed top-20 left-[10%] w-24 h-24 bg-blue-500/10 rounded-3xl rotate-12 blur-2xl animate-pulse pointer-events-none -z-10" />
       <div className="fixed bottom-20 right-[10%] w-32 h-32 bg-purple-500/10 rounded-full -rotate-12 blur-3xl animate-pulse pointer-events-none -z-10" />
@@ -84,7 +55,7 @@ const JoinForm = ({ onJoin }) => {
             <Sparkles size={12} className="animate-pulse" />
             Next-Gen Anonymous Networking
           </div>
-          <div className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white leading-tight brand-glow select-none">
+          <div className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white brand-glow select-none">
             Mask<span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Meet.</span>
           </div>
           <p className="text-slate-400 font-medium max-w-lg mx-auto text-sm md:text-base px-4 opacity-90 leading-relaxed">
@@ -94,7 +65,7 @@ const JoinForm = ({ onJoin }) => {
 
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-stretch max-w-5xl px-4">
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="glass-panel p-5 md:p-8 rounded-[2rem] flex flex-col justify-between space-y-6 animate-reveal hover-3d-card preserve-3d"
             style={{ animationDelay: '0.1s' }}
           >
@@ -182,43 +153,21 @@ const JoinForm = ({ onJoin }) => {
 
             <div className="grid grid-cols-1 gap-3 pt-2">
               <button
-                type="button"
-                onClick={(e) => handleSubmit(e, 'video')}
+                type="submit"
                 className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-xl font-black tracking-[0.2em] text-white shadow-xl shadow-blue-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
               >
                 <div className="flex items-center justify-center gap-2 relative z-10 text-xs md:text-sm">
-                  <Video size={18} className="group-hover:rotate-12 transition-transform" aria-hidden="true" />
-                  <span>LAUNCH VIDEO CHAT</span>
+                  <MessageSquare size={18} className="group-hover:rotate-12 transition-transform" aria-hidden="true" />
+                  <span>START CHAT</span>
                   <ChevronRight className="group-hover:translate-x-1 transition-transform" size={16} aria-hidden="true" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => handleSubmit(e, 'text')}
-                className="group bg-slate-800/40 border border-white/10 p-4 rounded-xl font-black tracking-[0.2em] text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all hover:scale-[1.01] active:scale-[0.99] text-xs md:text-sm backdrop-blur-sm"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <MessageSquare size={18} aria-hidden="true" />
-                  <span>TEXT-ONLY MODE</span>
-                </div>
               </button>
             </div>
           </form>
 
           <aside className="relative group animate-reveal hidden lg:block" style={{ animationDelay: '0.2s' }} aria-label="Feature Preview">
             <div className="h-full bg-gradient-to-br from-slate-900 to-black border border-white/10 rounded-[2rem] overflow-hidden relative shadow-2xl hover-3d-card preserve-3d">
-              {initialMode === 'video' ? (
-                <div className="h-full w-full relative">
-                  <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover mirror opacity-80" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                  <div className="absolute bottom-6 left-6 flex items-center gap-3 px-4 py-2 bg-black/60 backdrop-blur-2xl rounded-lg border border-white/10 shadow-2xl">
-                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.8)]" />
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white">System: Camera Active</span>
-                  </div>
-                </div>
-              ) : (
                 <div className="h-full w-full flex flex-col items-center justify-center p-10 space-y-6 text-center relative">
                   <div className="absolute top-0 right-0 p-6 opacity-10">
                     <Zap size={60} aria-hidden="true" />
@@ -238,7 +187,6 @@ const JoinForm = ({ onJoin }) => {
                     <div className="p-3 bg-white/5 rounded-lg border border-white/10"><Zap size={20} /></div>
                   </div>
                 </div>
-              )}
             </div>
           </aside>
         </div>

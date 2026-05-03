@@ -5,26 +5,10 @@ const useChatStore = create((set) => ({
     peer: null,
     messages: [],
     status: 'idle', // idle, searching, connected, disconnected
-    chatMode: 'text', // Active mode: 'text', 'audio', 'video'
-    initialMode: 'text', // Mode selected on Home
-    localStream: null,
-    remoteStream: null,
-    isMuted: false,
-    isVideoOff: false,
-
-    // Call agreement states
-    callRequest: null, // 'audio' | 'video' | null (outgoing)
-    incomingCall: null, // 'audio' | 'video' | null (incoming)
 
     setUser: (user) => set({ user }),
     setPeer: (peer) => set({ peer }),
     setStatus: (status) => set({ status }),
-    setChatMode: (mode) => set({ chatMode: mode }),
-    setInitialMode: (mode) => set({ initialMode: mode }),
-    setLocalStream: (stream) => set({ localStream: stream }),
-    setRemoteStream: (stream) => set({ remoteStream: stream }),
-    setIsMuted: (isMuted) => set({ isMuted }),
-    setIsVideoOff: (isVideoOff) => set({ isVideoOff }),
 
     addMessage: (message) => set((state) => ({
         messages: [...state.messages, message]
@@ -34,13 +18,7 @@ const useChatStore = create((set) => ({
     resetChat: (keepPeerInfo = false) => {
         set((state) => ({
             peer: keepPeerInfo ? state.peer : null,
-            status: 'disconnected',
-            remoteStream: null,
-            callRequest: null,
-            incomingCall: null,
-            chatMode: state.initialMode || 'text',
-            isMuted: false,
-            isVideoOff: false
+            status: 'disconnected'
         }));
     },
 
@@ -52,15 +30,7 @@ const useChatStore = create((set) => ({
             user: null,
             peer: null,
             messages: [],
-            status: 'idle',
-            localStream: null,
-            remoteStream: null,
-            callRequest: null,
-            incomingCall: null,
-            chatMode: 'text',
-            initialMode: 'text',
-            isMuted: false,
-            isVideoOff: false
+            status: 'idle'
         });
     }
 }));
