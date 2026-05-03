@@ -4,7 +4,7 @@ import { Send, SkipForward, MessageSquare, Home, Video, Mic, PhoneOff, Sparkles,
 
 /**
  * ChatPanel Component
- * Handles messaging and call signaling UI.
+ * Handles messaging and call signaling UI with non-blocking banners.
  */
 const ChatPanel = ({
     onSendMessage,
@@ -45,54 +45,44 @@ const ChatPanel = ({
     return (
         <section className="flex flex-col h-full bg-[#0a0f1d]/60 backdrop-blur-3xl md:border-l border-white/5 w-full relative overflow-hidden font-['Plus_Jakarta_Sans']" aria-label="Chat Interface">
 
-            {/* Incoming Call Overlay */}
+            {/* Incoming Call Notification (Non-blocking Banner) */}
             {incomingCall && (
-                <div className="absolute inset-0 z-[100] bg-[#020617]/95 backdrop-blur-2xl flex items-center justify-center p-6 animate-reveal">
-                    <div className="w-full max-w-sm bg-slate-900/50 border border-white/10 rounded-[2.5rem] p-8 text-center space-y-8 shadow-2xl">
-                        <div className="relative mx-auto w-24 h-24">
-                            <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
-                            <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-xl">
-                                {incomingCall === 'video' ? <Video size={40} className="text-white" /> : <Phone size={40} className="text-white" />}
-                            </div>
+                <div className="absolute top-0 left-0 right-0 z-[100] bg-blue-600/95 backdrop-blur-md p-3 md:p-4 flex items-center justify-between animate-reveal border-b border-white/10 shadow-2xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            {incomingCall === 'video' ? <Video size={20} className="text-white" /> : <Phone size={20} className="text-white" />}
                         </div>
-
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-white tracking-tight uppercase">Incoming {incomingCall} call</h3>
-                            <p className="text-slate-400 font-medium uppercase tracking-[0.2em] text-[10px]">Stranger wants to connect</p>
+                        <div className="min-w-0 text-left">
+                            <p className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Incoming {incomingCall} call</p>
+                            <p className="text-white/70 text-[11px] font-bold truncate">{peer?.nickname} calling...</p>
                         </div>
-
-                        <div className="flex gap-4">
-                            <button onClick={declineCall} className="flex-1 bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 py-4 rounded-2xl text-slate-400 hover:text-rose-500 font-bold transition-all flex items-center justify-center gap-2">
-                                <X size={20} />
-                                <span>Decline</span>
-                            </button>
-                            <button onClick={handleAcceptCall} className="flex-1 bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl text-white font-black shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 animate-bounce-slow">
-                                <Phone size={20} />
-                                <span>Accept</span>
-                            </button>
-                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={declineCall} className="p-2.5 bg-rose-500 hover:bg-rose-600 rounded-xl text-white transition-colors shadow-lg" title="Decline">
+                            <X size={18} />
+                        </button>
+                        <button onClick={handleAcceptCall} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-white transition-colors shadow-lg animate-bounce-slow" title="Accept">
+                            <Phone size={18} />
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Outgoing Call Overlay */}
+            {/* Outgoing Call Notification (Non-blocking Banner) */}
             {callRequest && (
-                <div className="absolute inset-0 z-[100] bg-[#020617]/90 backdrop-blur-xl flex items-center justify-center p-6 animate-reveal">
-                    <div className="text-center space-y-8">
-                        <div className="relative mx-auto w-20 h-20">
-                            <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
-                            <div className="relative w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
-                                <Phone size={32} className="text-blue-500 animate-pulse" />
-                            </div>
+                <div className="absolute top-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-md p-3 md:p-4 flex items-center justify-between animate-reveal border-b border-white/10 shadow-2xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                            <Phone size={20} className="text-blue-500 animate-pulse" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-white font-black tracking-[0.2em] uppercase text-xs">Calling Stranger...</p>
+                        <div className="min-w-0 text-left">
+                            <p className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Calling {peer?.nickname}...</p>
                             <p className="text-slate-500 text-[10px] font-bold uppercase">Waiting for answer</p>
                         </div>
-                        <button onClick={onCancelCall} className="px-10 py-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all active:scale-95">
-                            Cancel Call
-                        </button>
                     </div>
+                    <button onClick={onCancelCall} className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all whitespace-nowrap">
+                        Cancel
+                    </button>
                 </div>
             )}
 
@@ -108,7 +98,11 @@ const ChatPanel = ({
                         )}
                     </div>
                     <div className="min-w-0">
-                        <h2 className="font-bold text-[11px] md:text-sm text-white tracking-wider uppercase truncate">
+                        <h2 className={`font-black text-[11px] md:text-sm tracking-wider uppercase truncate ${
+                            status === 'connected' ? 'text-emerald-400' :
+                            status === 'disconnected' ? 'text-rose-500' :
+                            'text-white'
+                        }`}>
                             {status === 'connected' ? peer?.nickname : (status === 'disconnected' ? 'Stranger Left' : 'Anonymous Match')}
                         </h2>
                         {status === 'connected' && (
@@ -137,9 +131,18 @@ const ChatPanel = ({
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
                 {messages.map((msg, idx) => {
                     if (msg.sender === 'system') {
+                        const isConnected = msg.type === 'connected' || msg.text.toLowerCase().includes('connected');
+                        const isDisconnected = msg.type === 'disconnected' ||
+                                              msg.text.toLowerCase().includes('left') ||
+                                              msg.text.toLowerCase().includes('ended');
+
                         return (
                             <div key={idx} className="flex justify-center py-1">
-                                <span className="px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest bg-white/5 border border-white/5 text-slate-500">
+                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all shadow-sm ${
+                                    isConnected ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                    isDisconnected ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
+                                    'bg-white/5 border-white/5 text-slate-500'
+                                }`}>
                                     {msg.text}
                                 </span>
                             </div>

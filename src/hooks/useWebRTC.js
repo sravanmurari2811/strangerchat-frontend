@@ -24,39 +24,74 @@ export const useWebRTC = () => {
     }, [setRemoteStream]);
 
     const stopLocalStream = useCallback(() => {
-        const currentStream = useChatStore.getState().localStream;
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
+        const { localStream } = useChatStore.getState();
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
             setLocalStream(null);
         }
+    }, [setLocalStream]);
+
+    const getRequiredStream = useCallback(async (type) => {
+        const needsVideo = type === 'video';
+        let stream = useChatStore.getState().localStream;
+
+        // Check if current stream matches required type
+        const hasVideo = stream && stream.getVideoTracks().length > 0;
+        const matchesType = needsVideo ? hasVideo : true; // If we need audio, either audio or video stream is fine
+
+        if (!stream || (needsVideo && !hasVideo)) {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+
+            console.log(`[WebRTC] Requesting ${needsVideo ? 'Video' : 'Audio'} stream`);
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: needsVideo ? { width: 1280, height: 720 } : false,
+                audio: true
+            });
+            setLocalStream(stream);
+        }
+        return stream;
     }, [setLocalStream]);
 
     const setupPeerConnection = useCallback((remoteSocketId, stream) => {
         cleanupPeerConnection();
 
         pc.current = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
         });
 
         pc.current.onicecandidate = (e) => {
-            if (e.candidate) socket.emit('ice-candidate', { to: remoteSocketId, candidate: e.candidate });
+            if (e.candidate) {
+                socket.emit('ice-candidate', { to: remoteSocketId, candidate: e.candidate });
+            }
         };
 
         pc.current.ontrack = (e) => {
+            console.log('[WebRTC] Received remote track:', e.track.kind);
             if (e.streams && e.streams[0]) {
+                // Setting the stream directly to trigger re-render
                 setRemoteStream(e.streams[0]);
             }
         };
 
         if (stream) {
-            stream.getTracks().forEach(track => pc.current.addTrack(track, stream));
+            stream.getTracks().forEach(track => {
+                console.log('[WebRTC] Adding local track:', track.kind);
+                pc.current.addTrack(track, stream);
+            });
         }
     }, [cleanupPeerConnection, setRemoteStream]);
 
     const initiateWebRTC = useCallback(async (remoteSocketId, stream) => {
         setupPeerConnection(remoteSocketId, stream);
         try {
-            const offer = await pc.current.createOffer();
+            const offer = await pc.current.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
             await pc.current.setLocalDescription(offer);
             socket.emit('offer', { to: remoteSocketId, offer });
         } catch (e) { console.error('Offer Error:', e); }
@@ -68,25 +103,18 @@ export const useWebRTC = () => {
         if (!incoming || !p) return;
 
         try {
-            let stream = useChatStore.getState().localStream;
-            if (!stream) {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: incoming === 'video',
-                    audio: true
-                });
-                setLocalStream(stream);
-            }
+            const stream = await getRequiredStream(incoming);
             setChatMode(incoming);
             setIncomingCall(null);
-
             setupPeerConnection(p.id, stream);
             socket.emit('accept-call', { to: p.id, type: incoming });
         } catch (err) {
-            addMessage({ text: "Camera/Mic access denied", sender: 'system', type: 'disconnected', timestamp: new Date() });
+            console.error('[WebRTC] Failed to accept call:', err);
+            addMessage({ text: "Media access denied", sender: 'system', type: 'disconnected', timestamp: new Date() });
             socket.emit('decline-call', { to: p.id });
             setIncomingCall(null);
         }
-    }, [setLocalStream, setChatMode, setIncomingCall, setupPeerConnection, addMessage]);
+    }, [setChatMode, setIncomingCall, setupPeerConnection, addMessage, getRequiredStream]);
 
     const declineCall = useCallback(() => {
         const p = useChatStore.getState().peer;
@@ -119,19 +147,13 @@ export const useWebRTC = () => {
             addMessage({ text: `${peerNickname} connected`, sender: 'system', type: 'connected', timestamp: new Date() });
 
             if (mode === 'video') {
-                const existingStream = useChatStore.getState().localStream;
-                if (existingStream) {
-                    if (initiator) setTimeout(() => initiateWebRTC(peerId, existingStream), 1000);
-                    else setupPeerConnection(peerId, existingStream);
-                } else {
-                    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-                        setLocalStream(stream);
-                        if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
-                        else setupPeerConnection(peerId, stream);
-                    }).catch(() => {
-                        addMessage({ text: "Could not access camera/mic", sender: 'system', type: 'disconnected', timestamp: new Date() });
-                    });
-                }
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+                    setLocalStream(stream);
+                    if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
+                    else setupPeerConnection(peerId, stream);
+                }).catch(() => {
+                    addMessage({ text: "Camera access denied", sender: 'system', type: 'disconnected', timestamp: new Date() });
+                });
             }
         };
 
@@ -142,10 +164,15 @@ export const useWebRTC = () => {
         socket.on('call-accepted', ({ from, type }) => {
             const currentRequest = useChatStore.getState().callRequest;
             setCallRequest(null);
+
             const finalMode = type || currentRequest || 'video';
             setChatMode(finalMode);
+
+            // Get current stream - should already be set by requestCall
             const stream = useChatStore.getState().localStream;
-            if (stream) initiateWebRTC(from, stream);
+            if (stream) {
+                initiateWebRTC(from, stream);
+            }
         });
 
         socket.on('call-declined', () => {
@@ -173,19 +200,27 @@ export const useWebRTC = () => {
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
                 socket.emit('answer', { to: from, answer });
+
                 while (iceQueue.current.length > 0) {
-                    pc.current.addIceCandidate(new RTCIceCandidate(iceQueue.current.shift())).catch(() => {});
+                    pc.current.addIceCandidate(new RTCIceCandidate(iceQueue.current.shift())).catch(e => {});
                 }
-            } catch (e) {}
+            } catch (e) { console.error('[WebRTC] Offer error:', e); }
         });
 
         socket.on('answer', async ({ answer }) => {
-            if (pc.current) pc.current.setRemoteDescription(new RTCSessionDescription(answer)).catch(() => {});
+            if (pc.current) {
+                try {
+                    await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
+                } catch (e) { console.error('[WebRTC] Answer error:', e); }
+            }
         });
 
         socket.on('ice-candidate', ({ candidate }) => {
-            if (pc.current && pc.current.remoteDescription) pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-            else iceQueue.current.push(candidate);
+            if (pc.current && pc.current.remoteDescription) {
+                pc.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {});
+            } else {
+                iceQueue.current.push(candidate);
+            }
         });
 
         socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
@@ -218,7 +253,6 @@ export const useWebRTC = () => {
 
     const nextUser = () => {
         cleanupPeerConnection();
-        // If they are in text mode, stop camera. If in video mode, keep it for next match.
         if (useChatStore.getState().initialMode === 'text') {
             stopLocalStream();
         }
@@ -240,21 +274,18 @@ export const useWebRTC = () => {
         socket.emit('join-matchmaking', userData);
     };
 
-    const requestCall = async (type) => {
+    const requestCall = useCallback(async (type) => {
         const p = useChatStore.getState().peer;
         if (!p) return;
         try {
-            let stream = useChatStore.getState().localStream;
-            if (!stream) {
-                stream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
-                setLocalStream(stream);
-            }
+            const stream = await getRequiredStream(type);
             setCallRequest(type);
             socket.emit('request-call', { to: p.id, type });
         } catch (err) {
-            addMessage({ text: "Camera/Mic access required for calls", sender: 'system', type: 'disconnected', timestamp: new Date() });
+            console.error('[WebRTC] Request call error:', err);
+            addMessage({ text: "Media access required", sender: 'system', type: 'disconnected', timestamp: new Date() });
         }
-    };
+    }, [setCallRequest, addMessage, getRequiredStream]);
 
     return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall, cancelCall, leaveChat, endCall };
 };

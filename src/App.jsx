@@ -4,7 +4,7 @@ import { useWebRTC } from './hooks/useWebRTC';
 import JoinForm from './components/JoinForm';
 import VideoPanel from './components/VideoPanel';
 import ChatPanel from './components/ChatPanel';
-import { ShieldCheck, Zap, Lock, EyeOff, Globe, Info, Heart, Users, MessageCircle } from 'lucide-react';
+import { MessageCircle, ShieldCheck, Zap, Lock, Globe, Heart } from 'lucide-react';
 
 function App() {
     const { status, setUser, chatMode } = useChatStore();
@@ -29,15 +29,17 @@ function App() {
         );
     }
 
+    // Media panel is only shown when ACTIVELY in an audio or video call session.
+    // While calling or waiting for a response, we stay in 'text' mode layout (Full Chat).
     const showMedia = chatMode === 'video' || chatMode === 'audio';
 
     return (
         <div className="flex flex-col md:flex-row h-[100dvh] w-full overflow-hidden bg-[#020617] relative font-['Plus_Jakarta_Sans']">
             <div className="space-bg" aria-hidden="true" />
 
-            {/* Sidebar: About our site (Desktop only) */}
+            {/* Sidebar: Desktop Only (Only when not in media mode) */}
             {!showMedia && (
-                <aside className="hidden md:flex md:w-[30%] lg:w-[25%] h-full flex-col border-r border-white/10 bg-slate-900/40 backdrop-blur-3xl z-20 p-8 overflow-y-auto custom-scrollbar" role="complementary">
+                <aside className="hidden md:flex md:w-[30%] lg:w-[25%] h-full flex-col border-r border-white/10 bg-slate-900/40 backdrop-blur-3xl z-20 p-8 overflow-y-auto custom-scrollbar">
                     <div className="animate-reveal space-y-10">
                         <div>
                             <h2 className="text-3xl font-black tracking-tighter text-white brand-glow flex items-center gap-2">
@@ -62,34 +64,27 @@ function App() {
 
                         <nav className="space-y-6">
                             <section>
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 mb-4 px-1">Community Guidelines</h3>
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 mb-4 px-1">Security Standards</h3>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4 group">
                                         <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/10 group-hover:border-blue-500/30 transition-colors">
                                             <Lock size={16} className="text-blue-400" />
                                         </div>
-                                        <span className="text-sm font-medium text-slate-300">End-to-End Encrypted</span>
+                                        <span className="text-sm font-medium text-slate-300">P2P Encrypted</span>
                                     </div>
                                     <div className="flex items-center gap-4 group">
                                         <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/10 group-hover:border-emerald-500/30 transition-colors">
                                             <ShieldCheck size={16} className="text-emerald-400" />
                                         </div>
-                                        <span className="text-sm font-medium text-slate-300">Identity Protected</span>
+                                        <span className="text-sm font-medium text-slate-300">Identity Guard</span>
                                     </div>
                                     <div className="flex items-center gap-4 group">
                                         <div className="p-2.5 bg-purple-500/10 rounded-xl border border-purple-500/10 group-hover:border-purple-500/30 transition-colors">
                                             <Globe size={16} className="text-purple-400" />
                                         </div>
-                                        <span className="text-sm font-medium text-slate-300">Global Matchmaking</span>
+                                        <span className="text-sm font-medium text-slate-300">Global Match</span>
                                     </div>
                                 </div>
-                            </section>
-
-                            <section className="pt-6 border-t border-white/5">
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 px-1">About MaskMeet</h3>
-                                <p className="text-xs leading-relaxed text-slate-400 font-medium px-1">
-                                    Experience the next generation of social interaction. MaskMeet uses direct Peer-to-Peer technology to ensure your conversations remain between you and your match. No logs, no tracking.
-                                </p>
                             </section>
                         </nav>
 
@@ -97,32 +92,29 @@ function App() {
                             <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 rounded-2xl p-5 border border-blue-500/20">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Zap size={14} className="text-blue-400" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">P2P Speed</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Low Latency</span>
                                 </div>
                                 <p className="text-[11px] text-slate-400 leading-tight">
-                                    Low-latency real-time data transmission via WebRTC.
+                                    Real-time P2P data flow via WebRTC secure sockets.
                                 </p>
                             </div>
-
                             <div className="flex items-center gap-2 opacity-40 px-1">
                                 <Heart size={12} className="text-rose-500" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Secure Network v5.0</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Secure Network</span>
                             </div>
                         </div>
                     </div>
                 </aside>
             )}
 
-            <main className={`relative h-full flex flex-col transition-all duration-500 ease-in-out
-                ${!showMedia ? 'flex-1 md:w-[70%] lg:w-[75%]' : 'flex-1'}`} role="main">
-
+            <main className={`relative h-full flex flex-col transition-all duration-500 ease-in-out flex-1`}>
                 <div className="flex flex-col md:flex-row h-full">
                     {showMedia && (
-                        <div className="flex-1 bg-black relative overflow-hidden h-[45%] md:h-full animate-reveal">
+                        <div className="flex-1 bg-black relative overflow-hidden h-[40%] md:h-full animate-reveal">
                             <VideoPanel />
                         </div>
                     )}
-                    <aside className={`${showMedia ? 'h-[55%] md:h-full w-full md:w-[360px] lg:w-[380px] border-t md:border-t-0 md:border-l border-white/10 z-30 shadow-2xl' : 'flex-1'}`}>
+                    <aside className={`flex-none ${showMedia ? 'h-[60%] md:h-full w-full md:w-[360px] lg:w-[400px] border-t md:border-t-0 md:border-l' : 'w-full'} border-white/10 z-30 shadow-2xl bg-[#020617]`}>
                         <ChatPanel
                             onSendMessage={rtc.sendMessage}
                             onNextUser={rtc.nextUser}
