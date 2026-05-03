@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageSquare, Home, Video, Mic, PhoneOff, Sparkles, Phone, X } from 'lucide-react';
+import { Send, SkipForward, MessageSquare, Home, Video, Mic, Sparkles, Phone, X, MicOff, VideoOff, RefreshCw } from 'lucide-react';
 
 /**
  * ChatPanel Component
@@ -14,12 +14,16 @@ const ChatPanel = ({
     declineCall,
     onCancelCall,
     onLeave,
-    onEndCall
+    onEndCall,
+    onToggleMute,
+    onToggleVideo,
+    onSwitchCamera
 }) => {
     const [message, setMessage] = useState('');
     const {
         messages, status, peer, chatMode,
-        incomingCall, callRequest
+        incomingCall, callRequest, initialMode,
+        isMuted, isVideoOff
     } = useChatStore();
     const scrollRef = useRef(null);
 
@@ -30,7 +34,7 @@ const ChatPanel = ({
                 behavior: 'smooth'
             });
         }
-    }, [messages]);
+    }, [messages, status]);
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -87,7 +91,7 @@ const ChatPanel = ({
             )}
 
             {/* Header: Identity and Call Controls */}
-            <header className="px-5 py-3 md:px-6 md:py-4 border-b border-white/5 flex justify-between items-center bg-black/30 z-50">
+            <header className="px-5 py-3 md:px-6 md:py-4 border-b border-white/5 flex justify-between items-center bg-slate-900/90 md:bg-black/30 backdrop-blur-xl z-50">
                 <div className="flex items-center gap-3">
                     <div className="relative">
                         <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/20">
@@ -98,12 +102,12 @@ const ChatPanel = ({
                         )}
                     </div>
                     <div className="min-w-0">
-                        <h2 className={`font-black text-[11px] md:text-sm tracking-wider uppercase truncate ${
+                        <h2 className={`font-black text-xs md:text-sm tracking-wider uppercase truncate transition-colors duration-300 ${
                             status === 'connected' ? 'text-emerald-400' :
                             status === 'disconnected' ? 'text-rose-500' :
-                            'text-white'
+                            'text-slate-100'
                         }`}>
-                            {status === 'connected' ? peer?.nickname : (status === 'disconnected' ? 'Stranger Left' : 'Anonymous Match')}
+                            {status === 'connected' ? peer?.nickname : (status === 'disconnected' ? 'Stranger Left' : (status === 'searching' ? 'Matching...' : 'Anonymous Match'))}
                         </h2>
                         {status === 'connected' && (
                             <div className="flex items-center gap-1.5 mt-0.5">
@@ -115,54 +119,125 @@ const ChatPanel = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* Header Controls for Text Mode */}
                     {status === 'connected' && !isMediaMode && (
                         <>
                             <button onClick={() => requestCall('audio')} className="p-2 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all" title="Audio Call"><Mic size={18} /></button>
                             <button onClick={() => requestCall('video')} className="p-2 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all" title="Video Call"><Video size={18} /></button>
+
+                            {/* "End Call" available in text mode ONLY if user selected Video Call at start */}
+                            {initialMode === 'video' && (
+                                <button
+                                    onClick={onNextUser}
+                                    className="p-2 md:p-2.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 ml-1"
+                                    title="End Call"
+                                >
+                                    <Phone size={18} className="rotate-[135deg]" />
+                                    <span className="hidden lg:block text-[10px] font-black uppercase tracking-widest">End Call</span>
+                                </button>
+                            )}
                         </>
                     )}
-                    {isMediaMode && (
-                        <button onClick={onEndCall} className="p-2 md:p-2.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-600 hover:text-white transition-all border border-rose-500/20" title="End Call"><PhoneOff size={18} /></button>
+
+                    {/* Header Controls for Media Mode (Video/Audio) */}
+                    {status === 'connected' && isMediaMode && (
+                        <>
+                            <button
+                                onClick={onToggleMute}
+                                className={`p-2 md:p-2.5 rounded-lg transition-all ${isMuted ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                                title={isMuted ? "Unmute" : "Mute"}
+                            >
+                                {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+                            </button>
+
+                            {chatMode === 'video' && (
+                                <>
+                                    <button
+                                        onClick={onToggleVideo}
+                                        className={`p-2 md:p-2.5 rounded-lg transition-all ${isVideoOff ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                                        title={isVideoOff ? "Video On" : "Video Off"}
+                                    >
+                                        {isVideoOff ? <VideoOff size={18} /> : <Video size={18} />}
+                                    </button>
+                                    <button
+                                        onClick={onSwitchCamera}
+                                        className="p-2 md:p-2.5 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all"
+                                        title="Switch Camera"
+                                    >
+                                        <RefreshCw size={18} />
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Keep End Call button ONLY if user started with Text format (allows return to text) */}
+                            {initialMode === 'text' && (
+                                <button
+                                    onClick={onEndCall}
+                                    className="p-2 md:p-2.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 ml-1"
+                                    title="End Call"
+                                >
+                                    <Phone size={18} className="rotate-[135deg]" />
+                                    <span className="hidden lg:block text-[10px] font-black uppercase tracking-widest">End Call</span>
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </header>
 
-            {/* Chat Feed */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
-                {messages.map((msg, idx) => {
-                    if (msg.sender === 'system') {
-                        const isConnected = msg.type === 'connected' || msg.text.toLowerCase().includes('connected');
-                        const isDisconnected = msg.type === 'disconnected' ||
-                                              msg.text.toLowerCase().includes('left') ||
-                                              msg.text.toLowerCase().includes('ended');
+            {/* Chat Feed or Searching Animation */}
+            <div ref={scrollRef} className={`flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar ${status === 'searching' ? 'flex flex-col items-center justify-center' : ''}`}>
+                {status === 'searching' ? (
+                    <div className="flex flex-col items-center justify-center space-y-8 animate-reveal px-6 text-center w-full">
+                        <div className="relative">
+                            <div className="w-24 h-24 md:w-36 md:h-36 bg-blue-500/5 rounded-full flex items-center justify-center border border-blue-500/10 backdrop-blur-3xl glow-blue">
+                                <MessageSquare size={48} className="text-blue-500/20" />
+                            </div>
+                            <div className="absolute inset-[-12px] border-2 border-dashed border-blue-500/30 rounded-full animate-[spin_10s_linear_infinite]" />
+                        </div>
+                        <div className="space-y-3">
+                            <h3 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase brand-glow">
+                                Matching...
+                            </h3>
+                            <p className="text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-[0.4em] opacity-40">
+                                Scanning Global Network
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    messages.map((msg, idx) => {
+                        if (msg.sender === 'system') {
+                            const isConnected = msg.type === 'connected';
+                            const isDisconnected = msg.type === 'disconnected';
 
+                            return (
+                                <div key={idx} className="flex justify-center py-2 animate-reveal">
+                                    <span className={`px-5 py-2 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border transition-all duration-300 shadow-lg ${
+                                        isConnected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
+                                        isDisconnected ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' :
+                                        'bg-white/5 border-white/10 text-slate-400'
+                                    }`}>
+                                        {msg.text}
+                                    </span>
+                                </div>
+                            );
+                        }
+
+                        const isMe = msg.sender === 'me';
                         return (
-                            <div key={idx} className="flex justify-center py-1">
-                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all shadow-sm ${
-                                    isConnected ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                    isDisconnected ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                                    'bg-white/5 border-white/5 text-slate-500'
+                            <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-reveal`}>
+                                <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2 text-sm md:text-base font-medium leading-relaxed shadow-sm transition-all ${
+                                    isMe ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-900/10' : 'bg-[#1e293b]/90 text-slate-100 rounded-tl-none border border-white/5'
                                 }`}>
                                     {msg.text}
+                                </div>
+                                <span className="text-[8px] md:text-[9px] text-slate-600 mt-1 uppercase font-bold tracking-tighter opacity-40 px-1">
+                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
                         );
-                    }
-
-                    const isMe = msg.sender === 'me';
-                    return (
-                        <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-reveal`}>
-                            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2 text-sm md:text-base font-medium leading-relaxed shadow-sm transition-all ${
-                                isMe ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-900/10' : 'bg-[#1e293b]/90 text-slate-100 rounded-tl-none border border-white/5'
-                            }`}>
-                                {msg.text}
-                            </div>
-                            <span className="text-[8px] md:text-[9px] text-slate-600 mt-1 uppercase font-bold tracking-tighter opacity-40 px-1">
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                        </div>
-                    );
-                })}
+                    })
+                )}
             </div>
 
             {/* Footer */}

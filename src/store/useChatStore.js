@@ -9,6 +9,8 @@ const useChatStore = create((set) => ({
     initialMode: 'text', // Mode selected on Home
     localStream: null,
     remoteStream: null,
+    isMuted: false,
+    isVideoOff: false,
 
     // Call agreement states
     callRequest: null, // 'audio' | 'video' | null (outgoing)
@@ -21,9 +23,8 @@ const useChatStore = create((set) => ({
     setInitialMode: (mode) => set({ initialMode: mode }),
     setLocalStream: (stream) => set({ localStream: stream }),
     setRemoteStream: (stream) => set({ remoteStream: stream }),
-
-    setCallRequest: (type) => set({ callRequest: type }),
-    setIncomingCall: (type) => set({ incomingCall: type }),
+    setIsMuted: (isMuted) => set({ isMuted }),
+    setIsVideoOff: (isVideoOff) => set({ isVideoOff }),
 
     addMessage: (message) => set((state) => ({
         messages: [...state.messages, message]
@@ -37,7 +38,9 @@ const useChatStore = create((set) => ({
             remoteStream: null,
             callRequest: null,
             incomingCall: null,
-            chatMode: state.initialMode || 'text'
+            chatMode: state.initialMode || 'text',
+            isMuted: false,
+            isVideoOff: false
         }));
     },
 
@@ -55,7 +58,9 @@ const useChatStore = create((set) => ({
             callRequest: null,
             incomingCall: null,
             chatMode: 'text',
-            initialMode: 'text'
+            initialMode: 'text',
+            isMuted: false,
+            isVideoOff: false
         });
     }
 }));

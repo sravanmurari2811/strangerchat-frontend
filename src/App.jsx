@@ -111,7 +111,11 @@ function App() {
                 <div className="flex flex-col md:flex-row h-full">
                     {showMedia && (
                         <div className="flex-1 bg-black relative overflow-hidden h-[40%] md:h-full animate-reveal">
-                            <VideoPanel />
+                            <VideoPanel
+                                onToggleMute={rtc.toggleMute}
+                                onToggleVideo={rtc.toggleVideo}
+                                onSwitchCamera={rtc.switchCamera}
+                            />
                         </div>
                     )}
                     <aside className={`flex-none ${showMedia ? 'h-[60%] md:h-full w-full md:w-[360px] lg:w-[400px] border-t md:border-t-0 md:border-l' : 'w-full'} border-white/10 z-30 shadow-2xl bg-[#020617]`}>
@@ -124,6 +128,9 @@ function App() {
                             onCancelCall={rtc.cancelCall}
                             onLeave={rtc.leaveChat}
                             onEndCall={rtc.endCall}
+                            onToggleMute={rtc.toggleMute}
+                            onToggleVideo={rtc.toggleVideo}
+                            onSwitchCamera={rtc.switchCamera}
                         />
                     </aside>
                 </div>

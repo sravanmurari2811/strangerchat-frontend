@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Wifi, Zap, Video, Mic } from 'lucide-react';
+import { Wifi, Zap, Video, Mic, MicOff, VideoOff, RefreshCw } from 'lucide-react';
 
 /**
  * VideoPanel Component
- * Handles the display of local and remote streams for Video and Audio modes.
+ * Handles the display of local and remote streams and media controls.
  */
-const VideoPanel = () => {
-    const { localStream, remoteStream, status, peer, chatMode } = useChatStore();
+const VideoPanel = ({ onToggleMute, onToggleVideo, onSwitchCamera }) => {
+    const { localStream, remoteStream, status, peer, chatMode, isMuted, isVideoOff } = useChatStore();
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
@@ -100,10 +100,50 @@ const VideoPanel = () => {
                 )}
             </div>
 
+            {/* Media Controls */}
+            {status === 'connected' && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-50">
+                    <button
+                        onClick={onToggleMute}
+                        className={`p-4 rounded-2xl backdrop-blur-xl border transition-all ${
+                            isMuted
+                            ? 'bg-rose-500/20 border-rose-500/50 text-rose-500'
+                            : 'bg-white/10 border-white/10 text-white hover:bg-white/20'
+                        }`}
+                        title={isMuted ? "Unmute" : "Mute"}
+                    >
+                        {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                    </button>
+
+                    {!isAudioMode && (
+                        <>
+                            <button
+                                onClick={onToggleVideo}
+                                className={`p-4 rounded-2xl backdrop-blur-xl border transition-all ${
+                                    isVideoOff
+                                    ? 'bg-rose-500/20 border-rose-500/50 text-rose-500'
+                                    : 'bg-white/10 border-white/10 text-white hover:bg-white/20'
+                                }`}
+                                title={isVideoOff ? "Turn Video On" : "Turn Video Off"}
+                            >
+                                {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
+                            </button>
+                            <button
+                                onClick={onSwitchCamera}
+                                className="p-4 rounded-2xl backdrop-blur-xl border bg-white/10 border-white/10 text-white hover:bg-white/20 transition-all"
+                                title="Switch Camera"
+                            >
+                                <RefreshCw size={24} />
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+
             {/* Local Preview (PIP) */}
             <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 w-28 h-40 md:w-56 md:h-80 luxury-glass rounded-[2rem] md:rounded-[2.8rem] overflow-hidden p-1 shadow-2xl z-20 group transition-all duration-700 hover:scale-105 border border-white/10">
                 <div className="relative w-full h-full rounded-[1.8rem] md:rounded-[2.5rem] overflow-hidden bg-slate-900">
-                    {localStream && localStream.getVideoTracks().length > 0 ? (
+                    {localStream && localStream.getVideoTracks().length > 0 && !isVideoOff ? (
                         <video
                             ref={localVideoRef}
                             autoPlay
@@ -112,15 +152,18 @@ const VideoPanel = () => {
                             className="w-full h-full object-cover mirror grayscale-[0.2] group-hover:grayscale-0 transition-all duration-1000"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                            <Mic size={24} className="text-slate-600" />
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 gap-4">
+                            {isVideoOff ? <VideoOff size={32} className="text-slate-600" /> : <Mic size={32} className="text-slate-600" />}
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                {isVideoOff ? 'Video Off' : 'Audio Only'}
+                            </span>
                         </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
                     <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
                         <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/60">You</span>
                         <div className="flex gap-1.5">
-                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                            <div className={`w-1.5 h-1.5 rounded-full ${isMuted ? 'bg-rose-500' : 'bg-blue-500 animate-pulse'}`} />
                         </div>
                     </div>
                 </div>
