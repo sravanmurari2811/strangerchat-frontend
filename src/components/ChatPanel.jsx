@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageSquare, Home, Sparkles, Video, Phone } from 'lucide-react';
+import { Send, SkipForward, MessageSquare, Home, Sparkles, Video, Phone, X, Check } from 'lucide-react';
 
 /**
  * ChatPanel Component
@@ -11,11 +11,13 @@ const ChatPanel = ({
     onNextUser,
     onLeave,
     onVideoCall,
-    onAudioCall
+    onAudioCall,
+    onAcceptCall,
+    onRejectCall
 }) => {
     const [message, setMessage] = useState('');
     const {
-        messages, status, peer
+        messages, status, peer, incomingCall
     } = useChatStore();
     const scrollRef = useRef(null);
 
@@ -38,6 +40,43 @@ const ChatPanel = ({
 
     return (
         <section className="flex flex-col h-full bg-[#0a0f1d]/60 backdrop-blur-3xl md:border-l border-white/5 w-full relative overflow-hidden font-['Plus_Jakarta_Sans']" aria-label="Chat Interface">
+
+            {/* Incoming Call Popup Overlay */}
+            {incomingCall && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-reveal">
+                    <div className="bg-slate-900/95 backdrop-blur-2xl border border-blue-500/30 rounded-2xl p-4 shadow-2xl shadow-blue-500/40 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-500/20 animate-pulse">
+                                {incomingCall.type === 'video' ? (
+                                    <Video className="w-6 h-6 text-blue-400" />
+                                ) : (
+                                    <Phone className="w-6 h-6 text-blue-400" />
+                                )}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 truncate">Incoming {incomingCall.type} Call</p>
+                                <h3 className="text-white font-bold text-lg leading-tight truncate">{incomingCall.nickname}</h3>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                            <button
+                                onClick={onRejectCall}
+                                className="p-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl border border-rose-500/20 transition-all active:scale-95"
+                                title="Decline"
+                            >
+                                <X size={20} />
+                            </button>
+                            <button
+                                onClick={onAcceptCall}
+                                className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                                title="Accept"
+                            >
+                                <Check size={20} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <header className="px-4 py-3 md:px-6 md:py-4 border-b border-white/5 flex justify-between items-center bg-slate-900/90 md:bg-black/30 backdrop-blur-xl z-50">

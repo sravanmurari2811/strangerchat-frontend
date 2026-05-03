@@ -8,7 +8,7 @@ const socket = io(BACKEND_URL, { transports: ['websocket'], autoConnect: true })
 export const useWebRTC = () => {
     const {
         setPeer, setStatus, addMessage, resetChat,
-        clearChat, goHome
+        clearChat, goHome, setIncomingCall
     } = useChatStore();
 
     useEffect(() => {
@@ -23,14 +23,17 @@ export const useWebRTC = () => {
         socket.on('matched', onMatched);
         socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
 
-        socket.on('call-request', ({ from, type }) => {
-            const currentPeer = useChatStore.getState().peer;
-            addMessage({
-                text: `${currentPeer?.nickname || 'Stranger'} is requesting an ${type} call...`,
-                sender: 'system',
-                type: 'call',
-                timestamp: new Date()
-            });
+        socket.on('call-request', ({ from, type, nickname }) => {
+            setIncomingCall({ from, type, nickname });
+        });
+
+        socket.on('call-accepted', ({ from }) => {
+            addMessage({ text: `Call accepted! Connecting...`, sender: 'system', type: 'call', timestamp: new Date() });
+            // Here you would normally initialize the WebRTC PeerConnection for media
+        });
+
+        socket.on('call-rejected', ({ from }) => {
+            addMessage({ text: `Call rejected by stranger`, sender: 'system', type: 'disconnected', timestamp: new Date() });
         });
 
         socket.on('peer-disconnected', () => {
@@ -46,9 +49,11 @@ export const useWebRTC = () => {
             socket.off('matched');
             socket.off('receive-message');
             socket.off('call-request');
+            socket.off('call-accepted');
+            socket.off('call-rejected');
             socket.off('peer-disconnected');
         };
-    }, [setPeer, setStatus, addMessage, resetChat, clearChat]);
+    }, [setPeer, setStatus, addMessage, resetChat, clearChat, setIncomingCall]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
@@ -63,12 +68,25 @@ export const useWebRTC = () => {
         const p = useChatStore.getState().peer;
         if (p) {
             socket.emit('call-user', { to: p.id, type });
-            addMessage({
-                text: `Starting ${type} call...`,
-                sender: 'system',
-                type: 'call',
-                timestamp: new Date()
-            });
+            addMessage({ text: `Requesting ${type} call...`, sender: 'system', type: 'call', timestamp: new Date() });
+        }
+    };
+
+    const acceptCall = () => {
+        const incoming = useChatStore.getState().incomingCall;
+        if (incoming) {
+            socket.emit('accept-call', { to: incoming.from });
+            addMessage({ text: `You accepted the ${incoming.type} call`, sender: 'system', type: 'call', timestamp: new Date() });
+            setIncomingCall(null);
+            // Initialize WebRTC media here
+        }
+    };
+
+    const rejectCall = () => {
+        const incoming = useChatStore.getState().incomingCall;
+        if (incoming) {
+            socket.emit('reject-call', { to: incoming.from });
+            setIncomingCall(null);
         }
     };
 
@@ -89,11 +107,10 @@ export const useWebRTC = () => {
     };
 
     return {
-        join,
-        sendMessage,
-        nextUser,
-        leaveChat,
+        join, sendMessage, nextUser, leaveChat,
         startVideoCall: () => startCall('video'),
-        startAudioCall: () => startCall('audio')
+        startAudioCall: () => startCall('audio'),
+        acceptCall,
+        rejectCall
     };
 };

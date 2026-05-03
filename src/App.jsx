@@ -112,6 +112,8 @@ function App() {
                             onLeave={rtc.leaveChat}
                             onVideoCall={rtc.startVideoCall}
                             onAudioCall={rtc.startAudioCall}
+                            onAcceptCall={rtc.acceptCall}
+                            onRejectCall={rtc.rejectCall}
                         />
                     </aside>
                 </div>
