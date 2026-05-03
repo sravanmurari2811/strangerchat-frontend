@@ -29,30 +29,22 @@ const useChatStore = create((set) => ({
         messages: [...state.messages, message]
     })),
 
+    // resetChat is called when a match ends but we stay in the chat interface
     resetChat: (keepPeerInfo = false) => {
-        const { localStream, initialMode } = useChatStore.getState();
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
         set((state) => ({
             peer: keepPeerInfo ? state.peer : null,
-            // We don't clear messages here if we want to show "Stranger left"
             status: 'disconnected',
             remoteStream: null,
             callRequest: null,
             incomingCall: null,
-            chatMode: initialMode || 'text',
-            localStream: null
+            chatMode: state.initialMode || 'text'
         }));
     },
 
     clearChat: () => set({ messages: [], peer: null }),
 
+    // goHome is called when we leave the chat interface entirely
     goHome: () => {
-        const { localStream } = useChatStore.getState();
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
         set({
             user: null,
             peer: null,

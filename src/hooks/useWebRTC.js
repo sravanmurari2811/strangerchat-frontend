@@ -14,22 +14,25 @@ export const useWebRTC = () => {
     const pc = useRef(null);
     const iceQueue = useRef([]);
 
-    const cleanup = useCallback(() => {
+    const cleanupPeerConnection = useCallback(() => {
         if (pc.current) {
             pc.current.close();
             pc.current = null;
         }
         iceQueue.current = [];
+        setRemoteStream(null);
+    }, [setRemoteStream]);
+
+    const stopLocalStream = useCallback(() => {
         const currentStream = useChatStore.getState().localStream;
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
             setLocalStream(null);
         }
-        setRemoteStream(null);
-    }, [setLocalStream, setRemoteStream]);
+    }, [setLocalStream]);
 
     const setupPeerConnection = useCallback((remoteSocketId, stream) => {
-        if (pc.current) pc.current.close();
+        cleanupPeerConnection();
 
         pc.current = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
@@ -48,7 +51,7 @@ export const useWebRTC = () => {
         if (stream) {
             stream.getTracks().forEach(track => pc.current.addTrack(track, stream));
         }
-    }, [setRemoteStream]);
+    }, [cleanupPeerConnection, setRemoteStream]);
 
     const initiateWebRTC = useCallback(async (remoteSocketId, stream) => {
         setupPeerConnection(remoteSocketId, stream);
@@ -65,11 +68,14 @@ export const useWebRTC = () => {
         if (!incoming || !p) return;
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: incoming === 'video',
-                audio: true
-            });
-            setLocalStream(stream);
+            let stream = useChatStore.getState().localStream;
+            if (!stream) {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: incoming === 'video',
+                    audio: true
+                });
+                setLocalStream(stream);
+            }
             setChatMode(incoming);
             setIncomingCall(null);
 
@@ -88,32 +94,44 @@ export const useWebRTC = () => {
         setIncomingCall(null);
     }, [setIncomingCall]);
 
+    const cancelCall = useCallback(() => {
+        const p = useChatStore.getState().peer;
+        if (p) socket.emit('cancel-call', { to: p.id });
+        setCallRequest(null);
+    }, [setCallRequest]);
+
     const endCall = useCallback(() => {
         const p = useChatStore.getState().peer;
         if (p) socket.emit('end-call', { to: p.id });
 
-        cleanup();
+        cleanupPeerConnection();
         setChatMode('text');
         addMessage({ text: "Call ended", sender: 'system', type: 'disconnected', timestamp: new Date() });
-    }, [cleanup, setChatMode, addMessage]);
+    }, [cleanupPeerConnection, setChatMode, addMessage]);
 
     useEffect(() => {
         const onMatched = ({ peerId, peerNickname, mode, initiator }) => {
             clearChat();
             setPeer({ id: peerId, nickname: peerNickname });
             setStatus('connected');
-            setChatMode(mode); // Explicitly sync the chat mode in store
+            setChatMode(mode);
 
             addMessage({ text: `${peerNickname} connected`, sender: 'system', type: 'connected', timestamp: new Date() });
 
             if (mode === 'video') {
-                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-                    setLocalStream(stream);
-                    if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
-                    else setupPeerConnection(peerId, stream);
-                }).catch(() => {
-                    addMessage({ text: "Could not access camera/mic for video chat", sender: 'system', type: 'disconnected', timestamp: new Date() });
-                });
+                const existingStream = useChatStore.getState().localStream;
+                if (existingStream) {
+                    if (initiator) setTimeout(() => initiateWebRTC(peerId, existingStream), 1000);
+                    else setupPeerConnection(peerId, existingStream);
+                } else {
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+                        setLocalStream(stream);
+                        if (initiator) setTimeout(() => initiateWebRTC(peerId, stream), 1000);
+                        else setupPeerConnection(peerId, stream);
+                    }).catch(() => {
+                        addMessage({ text: "Could not access camera/mic", sender: 'system', type: 'disconnected', timestamp: new Date() });
+                    });
+                }
             }
         };
 
@@ -124,10 +142,8 @@ export const useWebRTC = () => {
         socket.on('call-accepted', ({ from, type }) => {
             const currentRequest = useChatStore.getState().callRequest;
             setCallRequest(null);
-
             const finalMode = type || currentRequest || 'video';
             setChatMode(finalMode);
-
             const stream = useChatStore.getState().localStream;
             if (stream) initiateWebRTC(from, stream);
         });
@@ -135,11 +151,16 @@ export const useWebRTC = () => {
         socket.on('call-declined', () => {
             setCallRequest(null);
             addMessage({ text: "Stranger declined the call", sender: 'system', type: 'disconnected', timestamp: new Date() });
-            cleanup();
+            cleanupPeerConnection();
+        });
+
+        socket.on('call-cancelled', () => {
+            setIncomingCall(null);
+            addMessage({ text: "Stranger cancelled the call", sender: 'system', type: 'disconnected', timestamp: new Date() });
         });
 
         socket.on('call-ended', () => {
-            cleanup();
+            cleanupPeerConnection();
             setChatMode('text');
             addMessage({ text: "Stranger ended the call", sender: 'system', type: 'disconnected', timestamp: new Date() });
         });
@@ -174,17 +195,17 @@ export const useWebRTC = () => {
             if (currentPeer) {
                 addMessage({ text: `${currentPeer.nickname} left`, sender: 'system', type: 'disconnected', timestamp: new Date() });
             }
-            cleanup();
+            cleanupPeerConnection();
             resetChat(true);
         });
 
         return () => {
             socket.off('waiting'); socket.off('matched'); socket.off('incoming-call');
-            socket.off('call-accepted'); socket.off('call-declined'); socket.off('call-ended');
+            socket.off('call-accepted'); socket.off('call-declined'); socket.off('call-cancelled'); socket.off('call-ended');
             socket.off('offer'); socket.off('answer'); socket.off('ice-candidate');
             socket.off('receive-message'); socket.off('peer-disconnected');
         };
-    }, [setPeer, setStatus, addMessage, cleanup, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode, clearChat]);
+    }, [setPeer, setStatus, addMessage, cleanupPeerConnection, resetChat, setupPeerConnection, initiateWebRTC, setIncomingCall, setCallRequest, setLocalStream, setChatMode, clearChat]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
@@ -196,14 +217,19 @@ export const useWebRTC = () => {
     };
 
     const nextUser = () => {
-        cleanup();
+        cleanupPeerConnection();
+        // If they are in text mode, stop camera. If in video mode, keep it for next match.
+        if (useChatStore.getState().initialMode === 'text') {
+            stopLocalStream();
+        }
         clearChat();
         setStatus('searching');
         socket.emit('next-user');
     };
 
     const leaveChat = () => {
-        cleanup();
+        cleanupPeerConnection();
+        stopLocalStream();
         socket.emit('leave-chat');
         goHome();
     };
@@ -218,8 +244,11 @@ export const useWebRTC = () => {
         const p = useChatStore.getState().peer;
         if (!p) return;
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
-            setLocalStream(stream);
+            let stream = useChatStore.getState().localStream;
+            if (!stream) {
+                stream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
+                setLocalStream(stream);
+            }
             setCallRequest(type);
             socket.emit('request-call', { to: p.id, type });
         } catch (err) {
@@ -227,5 +256,5 @@ export const useWebRTC = () => {
         }
     };
 
-    return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall, leaveChat, endCall };
+    return { join, sendMessage, nextUser, requestCall, handleAcceptCall, declineCall, cancelCall, leaveChat, endCall };
 };

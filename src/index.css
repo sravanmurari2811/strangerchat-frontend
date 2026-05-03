@@ -12,8 +12,8 @@ body {
   color: #f8fafc;
   overflow-x: hidden;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  /* Signficantly increased base font for Laptop/Desktop readability */
-  font-size: 18px;
+  /* Balanced base font for readability */
+  font-size: 16px;
 }
 
 /* Modern Mesh Gradient Background */
@@ -52,8 +52,18 @@ body {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
+.luxury-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .brand-glow {
   text-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+}
+
+.glow-blue {
+  box-shadow: 0 0 50px -10px rgba(59, 130, 246, 0.3);
 }
 
 .animate-reveal {
@@ -65,9 +75,18 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Enlarged Input Fields */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(-7%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
+}
+
+/* Refined Input Fields */
 .input-field {
-  @apply w-full bg-black/60 border border-white/10 rounded-2xl py-5 px-8 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-white placeholder:text-slate-600 text-xl font-bold;
+  @apply w-full bg-black/60 border border-white/10 rounded-2xl py-4 px-6 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-white placeholder:text-slate-600 text-lg font-medium;
 }
 
 .mirror {
