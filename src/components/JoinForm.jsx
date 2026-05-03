@@ -72,7 +72,7 @@ const JoinForm = ({ onJoin }) => {
   };
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] perspective-2000 scroll-smooth" role="main">
+    <main className="min-h-[100dvh] w-full flex flex-col items-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] perspective-2000 scroll-smooth" role="main">
       <h1 className="sr-only">MaskMeet - Free Anonymous Stranger Video Chat & Text Matchmaking</h1>
 
       <div className="fixed top-20 left-[10%] w-24 h-24 bg-blue-500/10 rounded-3xl rotate-12 blur-2xl animate-pulse pointer-events-none -z-10" />

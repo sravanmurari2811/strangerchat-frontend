@@ -6,14 +6,20 @@
   color-scheme: dark;
 }
 
-body {
+html, body, #root {
+  height: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden;
   background: #000;
+}
+
+body {
   color: #f8fafc;
-  overflow-x: hidden;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  /* Balanced base font for readability */
   font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Modern Mesh Gradient Background */

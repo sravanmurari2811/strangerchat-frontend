@@ -22,20 +22,21 @@ function App() {
 
     if (status === 'idle') {
         return (
-            <>
-                <div className="space-bg" aria-hidden="true" />
-                <JoinForm onJoin={handleJoin} />
-            </>
+            <div className="fixed inset-0 overflow-hidden h-[100dvh] w-full bg-[#020617]">
+                <div className="space-bg absolute inset-0" aria-hidden="true" />
+                <div className="relative z-10 h-full w-full overflow-y-auto custom-scrollbar">
+                    <JoinForm onJoin={handleJoin} />
+                </div>
+            </div>
         );
     }
 
-    // Media panel is only shown when ACTIVELY in an audio or video call session.
-    // While calling or waiting for a response, we stay in 'text' mode layout (Full Chat).
     const showMedia = chatMode === 'video' || chatMode === 'audio';
 
     return (
-        <div className="flex flex-col md:flex-row h-[100dvh] w-full overflow-hidden bg-[#020617] relative font-['Plus_Jakarta_Sans']">
-            <div className="space-bg" aria-hidden="true" />
+        <div className="fixed inset-0 flex flex-col md:flex-row w-full h-[100dvh] overflow-hidden bg-[#020617] font-['Plus_Jakarta_Sans']">
+            {/* Global Background */}
+            <div className="space-bg absolute inset-0 pointer-events-none" aria-hidden="true" />
 
             {/* Sidebar: Desktop Only (Only when not in media mode) */}
             {!showMedia && (
@@ -107,10 +108,10 @@ function App() {
                 </aside>
             )}
 
-            <main className={`relative h-full flex flex-col transition-all duration-500 ease-in-out flex-1`}>
-                <div className="flex flex-col md:flex-row h-full">
+            <main className="relative flex-1 flex flex-col min-h-0 h-full w-full overflow-hidden z-20">
+                <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 w-full">
                     {showMedia && (
-                        <div className="flex-1 bg-black relative overflow-hidden h-[40%] md:h-full animate-reveal">
+                        <div className="h-[40%] md:h-full md:flex-1 bg-black relative overflow-hidden animate-reveal border-b md:border-b-0 border-white/5">
                             <VideoPanel
                                 onToggleMute={rtc.toggleMute}
                                 onToggleVideo={rtc.toggleVideo}
@@ -118,7 +119,11 @@ function App() {
                             />
                         </div>
                     )}
-                    <aside className={`flex-none ${showMedia ? 'h-[60%] md:h-full w-full md:w-[360px] lg:w-[400px] border-t md:border-t-0 md:border-l' : 'w-full'} border-white/10 z-30 shadow-2xl bg-[#020617]`}>
+                    <aside className={`flex flex-col min-h-0 relative ${
+                        showMedia
+                        ? 'h-[60%] md:h-full md:w-[360px] lg:w-[400px] border-t md:border-t-0 md:border-l'
+                        : 'flex-1 h-full w-full'
+                    } border-white/10 shadow-2xl bg-[#020617]/80 backdrop-blur-md overflow-hidden`}>
                         <ChatPanel
                             onSendMessage={rtc.sendMessage}
                             onNextUser={rtc.nextUser}
