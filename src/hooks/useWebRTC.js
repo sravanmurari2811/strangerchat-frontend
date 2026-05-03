@@ -23,6 +23,16 @@ export const useWebRTC = () => {
         socket.on('matched', onMatched);
         socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
 
+        socket.on('call-request', ({ from, type }) => {
+            const currentPeer = useChatStore.getState().peer;
+            addMessage({
+                text: `${currentPeer?.nickname || 'Stranger'} is requesting an ${type} call...`,
+                sender: 'system',
+                type: 'call',
+                timestamp: new Date()
+            });
+        });
+
         socket.on('peer-disconnected', () => {
             const currentPeer = useChatStore.getState().peer;
             if (currentPeer) {
@@ -35,6 +45,7 @@ export const useWebRTC = () => {
             socket.off('waiting');
             socket.off('matched');
             socket.off('receive-message');
+            socket.off('call-request');
             socket.off('peer-disconnected');
         };
     }, [setPeer, setStatus, addMessage, resetChat, clearChat]);
@@ -45,6 +56,19 @@ export const useWebRTC = () => {
         if (p && s === 'connected') {
             socket.emit('send-message', { to: p.id, message: text });
             addMessage({ text, sender: 'me', timestamp: new Date() });
+        }
+    };
+
+    const startCall = (type) => {
+        const p = useChatStore.getState().peer;
+        if (p) {
+            socket.emit('call-user', { to: p.id, type });
+            addMessage({
+                text: `Starting ${type} call...`,
+                sender: 'system',
+                type: 'call',
+                timestamp: new Date()
+            });
         }
     };
 
@@ -64,5 +88,12 @@ export const useWebRTC = () => {
         socket.emit('join-matchmaking', userData);
     };
 
-    return { join, sendMessage, nextUser, leaveChat };
+    return {
+        join,
+        sendMessage,
+        nextUser,
+        leaveChat,
+        startVideoCall: () => startCall('video'),
+        startAudioCall: () => startCall('audio')
+    };
 };

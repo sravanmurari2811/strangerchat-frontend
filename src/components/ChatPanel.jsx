@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/useChatStore';
-import { Send, SkipForward, MessageSquare, Home, Sparkles } from 'lucide-react';
+import { Send, SkipForward, MessageSquare, Home, Sparkles, Video, Phone } from 'lucide-react';
 
 /**
  * ChatPanel Component
@@ -9,7 +9,9 @@ import { Send, SkipForward, MessageSquare, Home, Sparkles } from 'lucide-react';
 const ChatPanel = ({
     onSendMessage,
     onNextUser,
-    onLeave
+    onLeave,
+    onVideoCall,
+    onAudioCall
 }) => {
     const [message, setMessage] = useState('');
     const {
@@ -64,6 +66,26 @@ const ChatPanel = ({
                         )}
                     </div>
                 </div>
+
+                {/* Call Controls */}
+                {status === 'connected' && (
+                    <div className="flex items-center gap-2 md:gap-3 animate-reveal">
+                        <button
+                            onClick={onAudioCall}
+                            className="p-2 md:p-2.5 bg-slate-800/40 hover:bg-slate-700/60 rounded-xl border border-white/5 transition-all group active:scale-95"
+                            title="Audio Call"
+                        >
+                            <Phone className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-hover:text-white" />
+                        </button>
+                        <button
+                            onClick={onVideoCall}
+                            className="p-2 md:p-2.5 bg-blue-600/10 hover:bg-blue-600/20 rounded-xl border border-blue-500/20 transition-all group active:scale-95"
+                            title="Video Call"
+                        >
+                            <Video className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                        </button>
+                    </div>
+                )}
             </header>
 
             {/* Content Area: Search Animation or Chat Feed */}
@@ -87,11 +109,13 @@ const ChatPanel = ({
                             if (msg.sender === 'system') {
                                 const isConnected = msg.type === 'connected';
                                 const isDisconnected = msg.type === 'disconnected';
+                                const isCall = msg.type === 'call';
                                 return (
                                     <div key={idx} className="flex justify-center py-2 animate-reveal">
                                         <span className={`px-5 py-2 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border transition-all duration-300 shadow-lg ${
                                             isConnected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
                                             isDisconnected ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' :
+                                            isCall ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
                                             'bg-white/5 border-white/10 text-slate-400'
                                         }`}>
                                             {msg.text}

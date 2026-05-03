@@ -110,6 +110,8 @@ function App() {
                             onSendMessage={rtc.sendMessage}
                             onNextUser={rtc.nextUser}
                             onLeave={rtc.leaveChat}
+                            onVideoCall={rtc.startVideoCall}
+                            onAudioCall={rtc.startAudioCall}
                         />
                     </aside>
                 </div>
