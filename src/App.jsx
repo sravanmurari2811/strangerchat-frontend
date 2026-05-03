@@ -114,6 +114,7 @@ function App() {
                             onAudioCall={rtc.startAudioCall}
                             onAcceptCall={rtc.acceptCall}
                             onRejectCall={rtc.rejectCall}
+                            onEndCall={rtc.endCall}
                         />
                     </aside>
                 </div>
