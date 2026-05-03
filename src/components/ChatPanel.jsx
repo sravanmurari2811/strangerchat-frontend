@@ -5,6 +5,7 @@ import { Send, SkipForward, MessageSquare, Home, Sparkles, Video, Phone, X, Chec
 /**
  * ChatPanel Component
  * Handles messaging UI and Split-Screen Video Call interface.
+ * Responsive layout: Vertical split on mobile, Horizontal split on large screens.
  */
 const ChatPanel = ({
     onSendMessage,
@@ -159,12 +160,12 @@ const ChatPanel = ({
                 )}
             </header>
 
-            {/* Content Area: Main Layout Container */}
-            <div className={`flex-1 flex flex-col min-h-0 w-full overflow-hidden ${callActive ? 'h-full' : ''}`}>
+            {/* Content Area: Responsive Split Layout */}
+            <div className={`flex-1 flex min-h-0 w-full overflow-hidden ${callActive ? 'flex-col md:flex-row' : 'flex-col'}`}>
 
-                {/* Video Call Section (Top Half - WhatsApp Style) */}
+                {/* Video Call Section (Half width on Desktop, Half height on Mobile) */}
                 {callActive && (
-                    <div className="h-1/2 min-h-[250px] w-full relative bg-black border-b border-white/10 overflow-hidden animate-reveal">
+                    <div className="h-1/2 md:h-full w-full md:w-1/2 min-h-[250px] relative bg-black border-b md:border-b-0 md:border-r border-white/10 overflow-hidden animate-reveal">
                         {/* Remote Video (Stranger) */}
                         <video
                             ref={remoteVideoRef}
@@ -194,8 +195,8 @@ const ChatPanel = ({
                     </div>
                 )}
 
-                {/* Chat Feed Section (Bottom Half or Full Screen) */}
-                <div className={`relative min-h-0 w-full overflow-hidden flex-1 ${callActive ? 'h-1/2' : 'h-full'}`}>
+                {/* Chat Feed Section */}
+                <div className={`relative min-h-0 w-full overflow-hidden flex flex-col ${callActive ? 'h-1/2 md:h-full md:w-1/2' : 'flex-1'}`}>
                     {status === 'searching' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-reveal px-6 text-center bg-[#0a0f1d]/40">
                             <div className="relative scale-90 md:scale-100">
@@ -210,15 +211,15 @@ const ChatPanel = ({
                             </div>
                         </div>
                     ) : (
-                        <div ref={scrollRef} className="h-full overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-1.5 custom-scrollbar">
                             {messages.map((msg, idx) => {
                                 if (msg.sender === 'system') {
                                     const isConnected = msg.type === 'connected';
                                     const isDisconnected = msg.type === 'disconnected';
                                     const isCall = msg.type === 'call';
                                     return (
-                                        <div key={idx} className="flex justify-center py-2 animate-reveal">
-                                            <span className={`px-5 py-2 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border transition-all duration-300 shadow-lg ${
+                                        <div key={idx} className="flex justify-center py-0.5 animate-reveal">
+                                            <span className={`px-5 py-1.5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border transition-all duration-300 shadow-lg ${
                                                 isConnected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
                                                 isDisconnected ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' :
                                                 isCall ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
@@ -237,7 +238,7 @@ const ChatPanel = ({
                                         }`}>
                                             {msg.text}
                                         </div>
-                                        <span className="text-[8px] md:text-[9px] text-slate-600 mt-1 uppercase font-bold tracking-tighter opacity-40 px-1">
+                                        <span className="text-[8px] md:text-[9px] text-slate-600 mt-0.5 uppercase font-bold tracking-tighter opacity-40 px-1">
                                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
@@ -245,38 +246,38 @@ const ChatPanel = ({
                             })}
                         </div>
                     )}
+
+                    {/* Footer (Inside Chat Feed Area to keep it attached to the bottom of the chat column) */}
+                    <footer className="p-3 md:p-6 bg-black/40 border-t border-white/5 mt-auto">
+                        <form onSubmit={handleSend} className="relative mb-3 md:mb-4">
+                            <input
+                                type="text"
+                                placeholder="Type a message..."
+                                className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 md:py-3.5 px-4 md:px-5 text-sm md:text-base focus:outline-none focus:border-blue-500/40 transition-all text-white placeholder:text-slate-600 font-medium"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                disabled={status !== 'connected'}
+                            />
+                            <button type="submit" disabled={status !== 'connected' || !message.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-500 transition-all disabled:opacity-20 shadow-lg">
+                                <Send className="w-4 h-4 md:w-5 md:h-5" />
+                            </button>
+                        </form>
+
+                        <div className="flex gap-2 md:gap-3">
+                            <button onClick={onLeave} className="flex-1 bg-slate-800/40 hover:bg-slate-700 text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-3 md:py-4 rounded-xl border border-white/5 transition-all flex items-center justify-center gap-2 group active:scale-95 shadow-lg">
+                                <Home className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-hover:text-white transition-colors" />
+                                <span>Home</span>
+                            </button>
+                            <button onClick={onNextUser} className={`flex-1 font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-3 md:py-4 rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 group active:scale-95 border border-white/5 ${
+                                status === 'connected' ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/20' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
+                            }`}>
+                                {status === 'connected' ? <SkipForward className="w-4 h-4 md:w-6 md:h-6 group-hover:translate-x-0.5 transition-transform" /> : <Sparkles className="w-4 h-4 md:w-6 md:h-6 animate-pulse" />}
+                                <span>{status === 'connected' ? 'Skip' : 'Next Match'}</span>
+                            </button>
+                        </div>
+                    </footer>
                 </div>
             </div>
-
-            {/* Footer */}
-            <footer className="p-3 md:p-6 bg-black/40 border-t border-white/5">
-                <form onSubmit={handleSend} className="relative mb-3 md:mb-4">
-                    <input
-                        type="text"
-                        placeholder="Type a message..."
-                        className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 md:py-3.5 px-4 md:px-5 text-sm md:text-base focus:outline-none focus:border-blue-500/40 transition-all text-white placeholder:text-slate-600 font-medium"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        disabled={status !== 'connected'}
-                    />
-                    <button type="submit" disabled={status !== 'connected' || !message.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-500 transition-all disabled:opacity-20 shadow-lg">
-                        <Send className="w-4 h-4 md:w-5 md:h-5" />
-                    </button>
-                </form>
-
-                <div className="flex gap-2 md:gap-3">
-                    <button onClick={onLeave} className="flex-1 bg-slate-800/40 hover:bg-slate-700 text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-3 md:py-4 rounded-xl border border-white/5 transition-all flex items-center justify-center gap-2 group active:scale-95 shadow-lg">
-                        <Home className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-hover:text-white transition-colors" />
-                        <span>Home</span>
-                    </button>
-                    <button onClick={onNextUser} className={`flex-1 font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] py-3 md:py-4 rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 group active:scale-95 border border-white/5 ${
-                        status === 'connected' ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/20' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
-                    }`}>
-                        {status === 'connected' ? <SkipForward className="w-4 h-4 md:w-6 md:h-6 group-hover:translate-x-0.5 transition-transform" /> : <Sparkles className="w-4 h-4 md:w-6 md:h-6 animate-pulse" />}
-                        <span>{status === 'connected' ? 'Skip' : 'Next Match'}</span>
-                    </button>
-                </div>
-            </footer>
         </section>
     );
 };
