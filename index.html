@@ -32,23 +32,36 @@
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "MaskMeet",
-      "url": "https://maskmeet-tan.vercel.app/",
-      "description": "Premium anonymous video chat platform for meeting strangers securely.",
-      "applicationCategory": "SocialNetworkingApplication",
-      "operatingSystem": "All",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "MaskMeet",
+        "url": "https://maskmeet-tan.vercel.app/",
+        "description": "Premium anonymous video chat platform for meeting strangers securely.",
+        "applicationCategory": "SocialNetworkingApplication",
+        "operatingSystem": "All",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "MaskMeet",
+        "url": "https://maskmeet-tan.vercel.app/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://maskmeet-tan.vercel.app/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
       }
-    }
+    ]
     </script>
 
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
   <body>
     <div id="root"></div>

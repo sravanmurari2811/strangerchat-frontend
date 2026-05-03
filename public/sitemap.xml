@@ -4,4 +4,12 @@
     <loc>https://maskmeet-tan.vercel.app/</loc>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://maskmeet-tan.vercel.app/privacy.html</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://maskmeet-tan.vercel.app/terms.html</loc>
+    <priority>0.3</priority>
+  </url>
 </urlset>
