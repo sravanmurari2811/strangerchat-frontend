@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useChatStore from '../store/useChatStore';
 import {
   User,
   MessageSquare,
@@ -10,7 +11,8 @@ import {
   Globe,
   Shield,
   AlertCircle,
-  Users
+  Users,
+  Circle
 } from 'lucide-react';
 
 const GENDER_OPTIONS = [
@@ -24,6 +26,7 @@ const JoinForm = ({ onJoin }) => {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('male');
   const [error, setError] = useState('');
+  const onlineCount = useChatStore((state) => state.onlineCount);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -51,9 +54,17 @@ const JoinForm = ({ onJoin }) => {
 
       <div className="max-w-5xl w-full flex flex-col items-center z-10 preserve-3d py-6 md:py-10">
         <header className="text-center mb-8 md:mb-12 space-y-3 animate-reveal">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-blue-400 text-xs font-black tracking-[0.3em] uppercase backdrop-blur-md">
-            <Sparkles size={12} className="animate-pulse" />
-            Next-Gen Anonymous Networking
+          <div className="flex flex-wrap justify-center gap-3 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-blue-400 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase backdrop-blur-md">
+              <Sparkles size={12} className="animate-pulse" />
+              Next-Gen Anonymous Networking
+            </div>
+            {onlineCount > 0 && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase backdrop-blur-md">
+                <Circle size={8} className="fill-emerald-400 animate-pulse" />
+                {onlineCount} Users Online
+              </div>
+            )}
           </div>
           <div className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white brand-glow select-none">
             Mask<span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Meet.</span>

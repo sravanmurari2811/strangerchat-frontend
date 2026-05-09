@@ -10,6 +10,7 @@ const useChatStore = create((set) => ({
     callType: null, // 'video' or 'audio'
     localStream: null,
     remoteStream: null,
+    onlineCount: 0,
 
     setUser: (user) => set({ user }),
     setPeer: (peer) => set({ peer }),
@@ -18,6 +19,7 @@ const useChatStore = create((set) => ({
     setCallActive: (active, type = null) => set({ callActive: active, callType: type }),
     setLocalStream: (stream) => set({ localStream: stream }),
     setRemoteStream: (stream) => set({ remoteStream: stream }),
+    setOnlineCount: (count) => set({ onlineCount: count }),
 
     addMessage: (message) => set((state) => ({
         messages: [...state.messages, message]

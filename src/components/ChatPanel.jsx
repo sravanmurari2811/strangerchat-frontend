@@ -198,7 +198,7 @@ const ChatPanel = ({
                 {/* Chat Feed Section */}
                 <div className={`relative min-h-0 w-full overflow-hidden flex flex-col ${callActive ? 'h-1/2 md:h-full md:w-1/2' : 'flex-1'}`}>
                     {status === 'searching' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-reveal px-6 text-center bg-[#0a0f1d]/40">
+                        <div className="flex-1 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-reveal px-6 text-center bg-[#0a0f1d]/40">
                             <div className="relative scale-90 md:scale-100">
                                 <div className="w-20 h-20 md:w-36 md:h-36 bg-blue-500/5 rounded-full flex items-center justify-center border border-blue-500/10 backdrop-blur-3xl glow-blue">
                                     <MessageSquare className="w-8 h-8 md:w-12 md:h-12 text-blue-500/20" />
@@ -248,7 +248,7 @@ const ChatPanel = ({
                     )}
 
                     {/* Footer (Inside Chat Feed Area to keep it attached to the bottom of the chat column) */}
-                    <footer className="p-3 md:p-6 bg-black/40 border-t border-white/5 mt-auto">
+                    <footer className="p-3 md:p-6 bg-black/40 border-t border-white/5 mt-auto z-10">
                         <form onSubmit={handleSend} className="relative mb-3 md:mb-4">
                             <input
                                 type="text"

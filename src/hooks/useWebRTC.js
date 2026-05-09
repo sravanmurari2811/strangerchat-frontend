@@ -17,7 +17,7 @@ export const useWebRTC = () => {
     const {
         setPeer, setStatus, addMessage, resetChat,
         clearChat, goHome, setIncomingCall, setCallActive,
-        setLocalStream, setRemoteStream
+        setLocalStream, setRemoteStream, setOnlineCount
     } = useChatStore();
 
     const pc = useRef(null);
@@ -164,6 +164,10 @@ export const useWebRTC = () => {
         socket.on('receive-message', ({ message }) => addMessage({ text: message, sender: 'stranger', timestamp: new Date() }));
         socket.on('waiting', () => setStatus('searching'));
 
+        socket.on('online-count', (count) => {
+            setOnlineCount(count);
+        });
+
         return () => {
             socket.off('matched');
             socket.off('call-request');
@@ -173,8 +177,9 @@ export const useWebRTC = () => {
             socket.off('peer-disconnected');
             socket.off('receive-message');
             socket.off('waiting');
+            socket.off('online-count');
         };
-    }, [setPeer, setStatus, addMessage, resetChat, clearChat, setIncomingCall, setCallActive, initPeerConnection, cleanupMedia, processCandidates]);
+    }, [setPeer, setStatus, addMessage, resetChat, clearChat, setIncomingCall, setCallActive, initPeerConnection, cleanupMedia, processCandidates, setOnlineCount]);
 
     const sendMessage = (text) => {
         const p = useChatStore.getState().peer;
