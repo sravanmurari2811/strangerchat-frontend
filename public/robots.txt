@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://maskmeet-tan.vercel.app/sitemap.xml
+Sitemap: https://maskmeet-woad.vercel.app/sitemap.xml
